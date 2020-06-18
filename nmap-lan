@@ -1,0 +1,4 @@
+#!/bin/bash
+set -euo pipefail
+nmap.exe -sn 192.168.1.100/24
+nmap.exe -sn 169.254.11/24

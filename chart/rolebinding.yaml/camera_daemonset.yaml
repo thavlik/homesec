@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ .Release.Name }}-stream
+spec:
+  template:
+    spec:
+      serviceAccountName: {{ .Release.Name }}-privileged
+      containers:
+      - name: camera
+        image: thavlik/homesec-camera:latest
+        resources:
+          limits:
+            memory: 512Mi
+          requests:
+            cpu: 1000m
+            memory: 512Mi
+        securityContext:
+          privileged: true
