@@ -4,7 +4,6 @@ camera:
   image: thavlik/homesec-camera:latest
   imagePullPolicy: Always
   logLevel: info
-  replicas: 1
   resources:
     requests:
       memory: "512Mi"
