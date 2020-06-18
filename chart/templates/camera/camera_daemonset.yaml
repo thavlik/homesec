@@ -22,4 +22,4 @@ spec:
         securityContext:
           privileged: true
       nodeSelector:
-        camera: true
+        camera: "true"
