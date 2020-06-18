@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-mixer
+  labels:
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+spec:
+  replicas: {{ .Values.mixer.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-mixer
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-mixer
+    spec:
+    {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 10 }}
+    {{- end }}
+      containers:
+        - name: mixer
+          imagePullPolicy: {{ .Values.mixer.imagePullPolicy }}
+          image: {{ .Values.mixer.image }}
+          ports:
+            - containerPort: 80
+              protocol: TCP
+          resources:
+{{ toYaml .Values.mixer.resources | indent 12 }}
