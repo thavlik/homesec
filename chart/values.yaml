@@ -1,0 +1,24 @@
+imagePullSecrets: []
+
+camera:
+  image: thavlik/homesec-camera:latest
+  imagePullPolicy: Always
+  logLevel: info
+  replicas: 1
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "1000m"
+    limits:
+      memory: "512Mi"
+      cpu: "2000m"
+
+mixer:
+  image: thavlik/homesec-mixer:latest
+  imagePullPolicy: Always
+  logLevel: info
+  replicas: 1
+  resources:
+    limits:
+      memory: "128Mi"
+      cpu: "100m"

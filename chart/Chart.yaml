@@ -1,0 +1,9 @@
+apiVersion: v1
+description: Kubernetes Home Security
+name: homesec
+version: 0.0.0
+maintainers:
+  - name: Tom Havlik
+    email: thavlik@protonmail.com
+    url: https://github.com/thavlik/homesec
+

@@ -7,9 +7,9 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-  - name: http
-    port: 80
-    targetPort: 80
+  - name: service
+    port: 4321
+    targetPort: 4321
     protocol: TCP
   selector:
     app: {{ .Release.Name }}-mixer
