@@ -16,6 +16,9 @@ pub extern "C" fn new_encoder(width: i32, height: i32) -> *mut c_void {
 
 #[no_mangle]
 pub extern "C" fn free_encoder(encoder: *mut c_void) {
+    unsafe {
+        Box::from_raw(encoder as *mut Encoder);
+    }
 }
 
 #[no_mangle]
