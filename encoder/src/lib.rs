@@ -25,8 +25,8 @@ pub extern "C" fn encode_frame(encoder: *mut c_void, frame: *const c_char) -> i3
 }
 
 #[no_mangle]
-pub extern "C" fn double(value: i32) -> i32 {
-    value * 2
+pub extern "C" fn mul(x: i32, y: i32) -> i32 {
+    x * y
 }
 
 
