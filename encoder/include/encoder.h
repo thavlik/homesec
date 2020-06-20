@@ -5,6 +5,10 @@
 
 extern "C" {
 
-int32_t rust_initialize_vad();
+int32_t encode_frame(void *encoder, const char *frame);
+
+void free_encoder(void *encoder);
+
+void *new_encoder(int32_t width, int32_t height);
 
 } // extern "C"
