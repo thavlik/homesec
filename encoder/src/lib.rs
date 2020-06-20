@@ -24,3 +24,10 @@ pub extern "C" fn encode_frame(encoder: *mut c_void, frame: *const c_char) -> i3
     0
 }
 
+#[no_mangle]
+pub extern "C" fn double(value: i32) -> i32 {
+    value * 2
+}
+
+
+

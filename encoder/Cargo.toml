@@ -17,4 +17,4 @@ cbindgen = "0.14.2"
 
 [lib]
 name = "encoder"
-crate-type = ["staticlib"]
+crate-type = ["dylib"]
