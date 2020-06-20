@@ -11,8 +11,7 @@ struct Encoder {
 
 #[no_mangle]
 pub extern "C" fn new_encoder(width: i32, height: i32) -> *mut c_void {
-    let e = Encoder{width, height};
-    std::ptr::null_mut()
+    Box::into_raw(Box::new(Encoder{width, height})) as _
 }
 
 #[no_mangle]
@@ -21,6 +20,7 @@ pub extern "C" fn free_encoder(encoder: *mut c_void) {
 
 #[no_mangle]
 pub extern "C" fn encode_frame(encoder: *mut c_void, frame: *const c_char) -> i32 {
+    let encoder: &mut Encoder = unsafe { &mut *(encoder as *mut Encoder) };
     0
 }
 
