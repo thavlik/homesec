@@ -1,0 +1,20 @@
+[package]
+name = "encoder"
+version = "0.1.0"
+authors = ["Tom Havlik <keres993@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+rav1e = { git = "https://github.com/xiph/rav1e.git" }
+anyhow = "1.0.12"
+
+[dependencies.log]
+features = ["std"]
+version = "^0.4"
+
+[build-dependencies]
+cbindgen = "0.14.2"
+
+[lib]
+name = "encoder"
+crate-type = ["staticlib"]

@@ -1,0 +1,8 @@
+[workspace]
+default-members = [
+  "encoder",
+]
+members = [
+  "encoder",
+]
+
