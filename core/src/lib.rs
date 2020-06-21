@@ -92,10 +92,6 @@ pub struct Output {
     stop_recv: Receiver<()>,
 }
 
-struct StreamInner {
-
-}
-
 pub struct Stream {
     stop: Sender<()>,
     width: usize,
@@ -176,6 +172,11 @@ async fn open_stream(dest: &str, outputs: Arc<Mutex<Vec<Arc<Output>>>>, stop_rec
     Ok(())
 }
 
-// TODO: refactor non-python code into module so cargo test will works again
-// TODO: refactor Stream into mod
 // TODO: write test code
+#[cfg(test)]
+mod test {
+    #[test]
+    fn basic_connection() {
+
+    }
+}
