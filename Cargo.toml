@@ -1,10 +1,10 @@
 [workspace]
 default-members = [
-  "encoder",
+  "camera",
   "mixer",
 ]
 members = [
-  "encoder",
+  "camera",
   "mixer",
 ]
 

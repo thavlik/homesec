@@ -142,6 +142,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "camera"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cbindgen",
+ "crossbeam",
+ "directories",
+ "env_logger",
+ "futures",
+ "lazy_static",
+ "log",
+ "portpicker",
+ "quinn",
+ "rav1e",
+ "rcgen",
+ "scopeguard",
+ "serde",
+ "tokio",
+]
+
+[[package]]
 name = "cbindgen"
 version = "0.14.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -361,27 +382,6 @@ name = "encode_unicode"
 version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a357d28ed41a50f9c765dbfe56cbc04a64e53e5fc58ba79fbc34c10ef3df831f"
-
-[[package]]
-name = "encoder"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "cbindgen",
- "crossbeam",
- "directories",
- "env_logger",
- "futures",
- "lazy_static",
- "log",
- "portpicker",
- "quinn",
- "rav1e",
- "rcgen",
- "scopeguard",
- "serde",
- "tokio",
-]
 
 [[package]]
 name = "env_logger"
