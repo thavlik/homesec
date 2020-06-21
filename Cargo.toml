@@ -1,8 +1,10 @@
 [workspace]
 default-members = [
   "encoder",
+  "mixer",
 ]
 members = [
   "encoder",
+  "mixer",
 ]
 

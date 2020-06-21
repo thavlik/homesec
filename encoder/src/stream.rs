@@ -80,6 +80,7 @@ mod test {
             } = conn.await.expect("failed to accept incoming connection");
             send_conn.send(())?;
             while let Some(data) = datagrams.next().await {
+                // TODO: verify payload
                 //let frame: Frame = bincode::deserialize(data?.as_ref())?;
                 //let mut send_data = send_data.lock().unwrap();
                 //if let (s, true) = &*send_data {
@@ -107,10 +108,10 @@ mod test {
                 _ => panic!("future not aborted"),
             }
         });
-
+        // TODO: connect client
         // Make sure the client connects
-        //recv_conn.recv_timeout(Duration::from_secs(10))
-        //    .expect("did not receive connection signal");
+        recv_conn.recv_timeout(Duration::from_secs(10))
+            .expect("did not receive connection signal");
         abort_handle.abort();
     }
 }
