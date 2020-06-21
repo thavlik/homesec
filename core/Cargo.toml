@@ -1,0 +1,35 @@
+[package]
+name = "homesec_core"
+version = "0.1.0"
+authors = ["Tom Havlik <keres993@gmail.com>"]
+edition = "2018"
+workspace = ".."
+
+[dependencies]
+rav1e = { git = "https://github.com/xiph/rav1e.git" }
+quinn = { git = "https://github.com/djc/quinn", features = ["tls-rustls"], rev = "5513c1b" }
+rustls = { version = "0.17", features = ["quic", "dangerous_configuration"] }
+bincode = { git = "https://github.com/servo/bincode.git" }
+webpki = { version = "0.21" }
+serde = { version = "1.0", features = ["derive"] }
+anyhow = "1.0.12"
+env_logger = "0.7.1"
+tokio = { version = "0.2.6", features = ["rt-core", "rt-threaded", "io-driver", "time", "macros"] }
+lazy_static = "1.4.0"
+futures = "0.3.1"
+crossbeam = "0.7.3"
+scopeguard = "1.1.0"
+rcgen = "0.8"
+bytes = "0.5.2"
+directories = "2.0.0"
+
+[dependencies.log]
+features = ["std"]
+version = "^0.4"
+
+[lib]
+name = "homesec_core"
+crate-type = ["lib"]
+
+[dev-dependencies]
+portpicker = "0.1.0"
