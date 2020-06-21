@@ -15,23 +15,15 @@ extern crate pyo3;
 use pyo3::prelude::*;
 use pyo3::exceptions::RuntimeError;
 use pyo3::{PyErr, types::{PyString, PyBytes}};
-use crossbeam::channel::{Sender, Receiver};
-use std::{ptr, ffi::{c_void, CStr}};
-use std::path::PathBuf;
-use std::os::raw::c_char;
-use anyhow::{Result, Error};
-use futures::StreamExt;
-use std::{net::SocketAddr, sync::{Arc, Weak, Mutex}};
-use quinn::{ClientConfig, ClientConfigBuilder};
+use homesec_core as core;
 
 #[pyclass]
 pub struct PyStream {
-    stop: Sender<()>,
-    inner: Arc<StreamInner>,
 }
 
 impl PyStream {
-    fn new(width: usize, height: usize, dest: &str) -> Result<Self> {
+    fn new(width: usize, height: usize, dest: &str) -> PyResult<Self> {
+        Ok(PyStream{})
     }
     
     fn send_frame(&mut self, data: &[u8]) {
