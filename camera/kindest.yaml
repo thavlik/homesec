@@ -1,3 +1,5 @@
+dependencies:
+  - ../base
 build:
   name: thavlik/homesec-camera
   context: ../

@@ -1,0 +1,4 @@
+build:
+  name: thavlik/homesec-base
+  context: ../
+  
