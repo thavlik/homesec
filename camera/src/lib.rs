@@ -230,7 +230,11 @@ impl Stream {
     }
     
     fn send_frame(&mut self, py: Python, data: &[u8]) {
+    }
+}
 
+impl std::ops::Drop for Stream {
+    fn drop(&mut self) {
     }
 }
 
