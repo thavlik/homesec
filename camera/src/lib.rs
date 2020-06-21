@@ -191,6 +191,9 @@ impl Driver {
  */
 
 struct StreamInner {
+    width: usize,
+    height: usize,
+    fps: usize,
 }
 
 #[pyclass]
@@ -202,10 +205,14 @@ pub struct Stream {
 #[pymethods]
 impl Stream {
     #[new]
-    fn new(width: usize, height: usize, dest: &str) -> PyResult<Self> {
+    fn new(width: usize, height: usize, fps: usize, dest: &str) -> PyResult<Self> {
         let (ready_send, ready_recv) = crossbeam::channel::bounded(1);
         let (stop_send, stop_recv) = crossbeam::channel::bounded(1);
-        let inner = Arc::new(StreamInner{});
+        let inner = Arc::new(StreamInner{
+            width,
+            height,
+            fps,
+        });
         let _inner = inner.clone();
         RUNTIME.clone()
             .lock()
