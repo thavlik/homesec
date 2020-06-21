@@ -217,18 +217,13 @@ impl Stream {
         match ready_recv.recv() {
             Ok(result) => match result {
                 Ok(()) => {
-                    //warn!("device has signaled ready state");
                     Ok(Stream::default())
                 },
                 Err(e) => {
-                    //error!("failed to initialize: {:?}", e);
-                    //Ok(Stream::default())
                     Err(PyErr::new::<RuntimeError, _>(e.to_string()))
                 }
             },
             Err(e) => {
-                //error!("ready channel error: {:?}", e);
-                //Ok(Stream::default())
                 Err(PyErr::new::<RuntimeError, _>(e.to_string()))
             }
         }
