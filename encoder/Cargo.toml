@@ -7,7 +7,7 @@ workspace = ".."
 
 [dependencies]
 rav1e = { git = "https://github.com/xiph/rav1e.git" }
-#quinn = { git = "https://github.com/djc/quinn", features = ["tls-rustls"] }
+quinn = { git = "https://github.com/djc/quinn", features = ["tls-rustls"] }
 #bincode = { git = "https://github.com/servo/bincode.git" }
 #rustls = { version = "0.17", features = ["quic"], optional = true }
 serde = { version = "1.0", features = ["derive"] }
