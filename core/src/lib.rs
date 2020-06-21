@@ -164,8 +164,9 @@ async fn open_stream(dest: &str, outputs: Arc<Mutex<Vec<Arc<Output>>>>, stop_rec
                 return Ok(());
             },
             Err(e) => {
-                error!("error connecting to {}: {}", &server_addr, e);
-                std::thread::sleep(std::time::Duration::from_secs(5));
+                let delay = 5;
+                error!("error connecting to {}: {}, retrying in {} seconds...", &server_addr, e, delay);
+                std::thread::sleep(std::time::Duration::from_secs(delay));
             }
         }
     }
