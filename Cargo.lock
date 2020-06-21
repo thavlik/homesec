@@ -749,6 +749,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "mixer"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "crossbeam",
+ "directories",
+ "env_logger",
+ "futures",
+ "lazy_static",
+ "log",
+ "quinn",
+ "rav1e",
+ "rcgen",
+ "scopeguard",
+ "serde",
+ "tokio",
+]
+
+[[package]]
 name = "nasm-rs"
 version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
