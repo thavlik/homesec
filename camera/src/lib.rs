@@ -290,6 +290,7 @@ async fn stream_entry(inner: Arc<StreamInner>, dest: &str, stop_recv: Receiver<(
     let server_addr: SocketAddr = dest.parse()?;
     loop {
         if let Ok(_) = stop_recv.try_recv() {
+            // Cancel the reconnect attempt if user requests shutdown
             return Ok(());
         }
         match connect(server_addr.clone()).await {
