@@ -3,7 +3,6 @@ use serde::{Deserialize, Serialize};
 use std::default::Default;
 use std::path::{self, Path, PathBuf};
 use std::process::Command;
-use uuid::Uuid;
 use quinn::{
     ServerConfig,
     ServerConfigBuilder,
@@ -21,7 +20,6 @@ use std::{
     sync::{Arc, mpsc, Mutex, atomic::{AtomicU64, Ordering}},
     fs,
 };
-use paradise_core::{Frame, device::{DeviceSpec, Endpoint}};
 use crossbeam::channel::{Sender, Receiver};
 use std::io::Write;
 use std::os::unix::fs::PermissionsExt;
@@ -50,7 +48,7 @@ mod test {
         let path = dirs.data_local_dir();
         let cert_path = path.join("cert.der");
         let key_path = path.join("key.der");
-        let (cert, key) = match fs::read(&cert_path).and_then(|x| Ok((x, fs::read(&key_path)?))) {
+        let (cert, key): (Vec<u8>, Vec<u8>) = match fs::read(&cert_path).and_then(|x| Ok((x, fs::read(&key_path)?))) {
             Ok(x) => x,
             Err(ref e) if e.kind() == io::ErrorKind::NotFound => {
                 let cert = rcgen::generate_simple_self_signed(vec!["localhost".into()])?;
@@ -93,8 +91,17 @@ mod test {
         Ok(())
     }
 
-    #[test]
-    fn test_basic_stream() {
-
+    #[tokio::test(threaded_scheduler)]
+    async fn test_basic_stream() {
+        let port = portpicker::pick_unused_port().expect("pick port");
+        let addr: SocketAddr = format!("127.0.0.1:{}", port).parse().unwrap();
+        let (mut send_conn, recv_conn) = crossbeam::channel::unbounded();
+        let (mut send_data, recv_data) = crossbeam::channel::unbounded();
+        let send_data = Arc::new(Mutex::new((send_data, true)));
+        let _send_data = send_data.clone();
+        let (abort_handle, abort_registration) = AbortHandle::new_pair();
+        let future = Abortable::new(async move {
+            basic_stream_server(addr, send_conn, _send_data).await
+        }, abort_registration);
     }
 }

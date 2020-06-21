@@ -18,6 +18,8 @@ lazy_static = "1.4.0"
 futures = "0.3.1"
 crossbeam = "0.7.3"
 scopeguard = "1.1.0"
+rcgen = "0.8"
+directories = "2.0.0"
 
 [dependencies.log]
 features = ["std"]
@@ -29,3 +31,6 @@ cbindgen = "0.14.2"
 [lib]
 name = "encoder"
 crate-type = ["dylib"]
+
+[dev-dependencies]
+portpicker = "0.1.0"

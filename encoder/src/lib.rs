@@ -24,7 +24,7 @@ use std::{ptr, ffi::{c_void}};
 /// NOTE, such verification is vulnerable to MITM attacks, but convenient for testing.
 struct SkipServerVerification;
 
-//mod stream;
+mod stream;
 /*
 
 impl SkipServerVerification {
