@@ -191,11 +191,8 @@ impl Driver {
  */
 
 #[pyclass]
-#[derive(Default)]
 pub struct Stream {
-    width: i32,
-    height: i32,
-    dest: String,
+    stop: Sender<()>,
 }
 
 async fn stream_entry(stop_recv: Receiver<()>) -> Result<()> {
@@ -217,7 +214,7 @@ impl Stream {
         match ready_recv.recv() {
             Ok(result) => match result {
                 Ok(()) => {
-                    Ok(Stream::default())
+                    Ok(Stream{stop: stop_send})
                 },
                 Err(e) => {
                     Err(PyErr::new::<RuntimeError, _>(e.to_string()))
@@ -235,6 +232,9 @@ impl Stream {
 
 impl std::ops::Drop for Stream {
     fn drop(&mut self) {
+        if let Err(e) = self.stop.send(()) {
+            error!("error stopping stream: {}", e);
+        }
     }
 }
 
