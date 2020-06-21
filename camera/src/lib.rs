@@ -228,9 +228,15 @@ impl Driver {
 }
  */
 
+pub struct Output {
+    pub conn: quinn::Connection,
+    pub endpoint: quinn::Endpoint,
+}
+
 struct StreamInner {
     width: usize,
     height: usize,
+    outputs: Mutex<Vec<Output>>,
 }
 
 #[pyclass]
@@ -248,6 +254,7 @@ impl Stream {
         let inner = Arc::new(StreamInner{
             width,
             height,
+            outputs: Mutex::new(Vec::new()),
         });
         let _inner = inner.clone();
         RUNTIME.clone()
@@ -275,6 +282,7 @@ impl Stream {
     }
     
     fn send_frame(&mut self, py: Python, data: &[u8]) {
+        // TODO: Send frame over conn
     }
 }
 
