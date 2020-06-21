@@ -195,7 +195,7 @@ pub struct Stream {
     stop: Sender<()>,
 }
 
-async fn stream_entry(stop_recv: Receiver<()>) -> Result<()> {
+async fn stream_entry(dest: &str, stop_recv: Receiver<()>) -> Result<()> {
     Ok(())
 }
 
@@ -209,7 +209,7 @@ impl Stream {
             .lock()
             .unwrap()
             .block_on(async move {
-                ready_send.send(stream_entry(stop_recv).await);
+                ready_send.send(stream_entry(dest, stop_recv).await);
             });
         match ready_recv.recv() {
             Ok(result) => match result {
