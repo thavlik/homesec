@@ -1,6 +1,6 @@
 fn main() {
     let crate_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
-    let out_header = "include/encoder.h";
+    let out_header = "include/util.h";
     cbindgen::Builder::new()
         .with_crate(crate_dir)
         .generate()
