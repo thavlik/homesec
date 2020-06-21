@@ -23,6 +23,7 @@ use anyhow::{Result, Error};
 use futures::StreamExt;
 use std::{net::SocketAddr, sync::{Arc, Weak, Mutex}};
 use quinn::{ClientConfig, ClientConfigBuilder};
+mod stream;
 
 
 lazy_static! {
@@ -37,7 +38,56 @@ lazy_static! {
 /// NOTE, such verification is vulnerable to MITM attacks, but convenient for testing.
 struct SkipServerVerification;
 
-mod stream;
+impl SkipServerVerification {
+    fn new() -> Arc<Self> {
+        Arc::new(Self)
+    }
+}
+
+impl rustls::ServerCertVerifier for SkipServerVerification {
+    fn verify_server_cert(
+        &self,
+        _roots: &rustls::RootCertStore,
+        _presented_certs: &[rustls::Certificate],
+        _dns_name: webpki::DNSNameRef,
+        _ocsp_response: &[u8],
+    ) -> Result<rustls::ServerCertVerified, rustls::TLSError> {
+        Ok(rustls::ServerCertVerified::assertion())
+    }
+}
+
+async fn connect(server_addr: SocketAddr) -> Result<(quinn::Endpoint, quinn::Connection)> {
+    warn!("configuring client");
+    let client_cfg = configure_client();
+
+    warn!("building endpoint...");
+    let mut endpoint_builder = quinn::Endpoint::builder();
+    endpoint_builder.default_client_config(client_cfg);
+
+    let addr = "127.0.0.1:0".parse()?;
+    warn!("binding endpoint {}", &addr);
+    let (endpoint, _) = endpoint_builder.bind(&addr)?;
+
+    warn!("connecting to server...");
+    let quinn::NewConnection { connection, .. } = endpoint
+        .connect(&server_addr, "localhost")?
+        .await?;
+
+    warn!("[client] connected: addr={}", connection.remote_address());
+
+    Ok((endpoint, connection))
+}
+
+fn configure_client() -> ClientConfig {
+    let mut cfg = ClientConfigBuilder::default().build();
+    let tls_cfg: &mut rustls::ClientConfig = Arc::get_mut(&mut cfg.crypto).unwrap();
+    // this is only available when compiled with "dangerous_configuration" feature
+    tls_cfg
+        .dangerous()
+        .set_certificate_verifier(SkipServerVerification::new());
+    cfg
+}
+
 /*
 
 impl SkipServerVerification {
@@ -138,18 +188,6 @@ async fn driver_entry(driver: Arc<Driver>, stop: Receiver<()>) -> Result<()> {
     Ok(())
 }
 
-pub struct Output {
-    pub spec: Endpoint,
-    pub conn: quinn::Connection,
-    pub endpoint: quinn::Endpoint,
-}
-
-pub struct Driver {
-    // TODO: spec for inputs and outputs
-    outputs: Mutex<Vec<Output>>,
-    spec: DeviceSpec,
-    stop: Mutex<Sender<()>>,
-}
 
 impl Driver {
     /// "Fire and forget" connect method
@@ -252,14 +290,15 @@ impl StreamInner {
     // "Fire and forget" connect routine
     async fn connect_with_retry(&self, server_addr: SocketAddr, stop_recv: Receiver<()>) {
         loop {
-            //match connect(server_addr.clone()).await {
-            //    Ok((e, conn)) => {
-            //    },
-            //    Err(e) => {
-            //        error!("error connecting to {}: {}", &server_addr, e);
-            //        std::thread::sleep(std::time::Duration::from_secs(5));
-            //    }
-            //}
+            match connect(server_addr.clone()).await {
+                Ok((e, conn)) => {
+                    // TODO: add the connection to Self
+                },
+                Err(e) => {
+                    error!("error connecting to {}: {}", &server_addr, e);
+                    std::thread::sleep(std::time::Duration::from_secs(5));
+                }
+            }
         }
     }
 }
