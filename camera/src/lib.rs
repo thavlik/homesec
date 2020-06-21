@@ -190,13 +190,13 @@ impl Driver {
 }
  */
 
+struct StreamInner {
+}
+
 #[pyclass]
 pub struct Stream {
     stop: Sender<()>,
-}
-
-async fn stream_entry(dest: &str, stop_recv: Receiver<()>) -> Result<()> {
-    Ok(())
+    inner: Arc<StreamInner>,
 }
 
 #[pymethods]
@@ -205,16 +205,21 @@ impl Stream {
     fn new(width: usize, height: usize, dest: &str) -> PyResult<Self> {
         let (ready_send, ready_recv) = crossbeam::channel::bounded(1);
         let (stop_send, stop_recv) = crossbeam::channel::bounded(1);
+        let inner = Arc::new(StreamInner{});
+        let _inner = inner.clone();
         RUNTIME.clone()
             .lock()
             .unwrap()
             .block_on(async move {
-                ready_send.send(stream_entry(dest, stop_recv).await);
+                ready_send.send(stream_entry(_inner, dest, stop_recv).await);
             });
         match ready_recv.recv() {
             Ok(result) => match result {
                 Ok(()) => {
-                    Ok(Stream{stop: stop_send})
+                    Ok(Stream{
+                        inner,
+                        stop: stop_send,
+                    })
                 },
                 Err(e) => {
                     Err(PyErr::new::<RuntimeError, _>(e.to_string()))
@@ -264,6 +269,6 @@ fn stream(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<Stream>()
 }
 
-
-
-
+async fn stream_entry(inner: Arc<StreamInner>, dest: &str, stop_recv: Receiver<()>) -> Result<()> {
+    Ok(())
+}
