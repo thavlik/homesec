@@ -250,7 +250,7 @@ impl std::ops::Drop for Stream {
 
 impl StreamInner {
     // "Fire and forget" connect routine
-    async fn connect_with_retry(&self, server_addr: SocketAddr) {
+    async fn connect_with_retry(&self, server_addr: SocketAddr, stop_recv: Receiver<()>) {
         loop {
             //match connect(server_addr.clone()).await {
             //    Ok((e, conn)) => {
@@ -267,7 +267,7 @@ impl StreamInner {
 async fn stream_entry(inner: Arc<StreamInner>, dest: &str, stop_recv: Receiver<()>) -> Result<()> {
     let server_addr: SocketAddr = dest.parse()?;
     tokio::spawn(async move {
-        inner.connect_with_retry(server_addr).await;
+        inner.connect_with_retry(server_addr, stop_recv).await;
     });
     Ok(())
 }
