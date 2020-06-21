@@ -203,6 +203,6 @@ fn stream(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<Stream>()
 }
 
-// TODO: refactor non-python code into module
+// TODO: refactor non-python code into module so cargo test will works again
 // TODO: refactor Stream into mod
 // TODO: write test code
