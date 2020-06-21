@@ -239,7 +239,7 @@ impl std::ops::Drop for Stream {
 }
 
 impl Stream {
-    // "Fire and forget" connect script
+    // "Fire and forget" connect routine
     async fn connect_with_retry(&self, addr: &str) {
         //let server_addr: SocketAddr = match addr.parse() {
         //    Ok(v) => v,
