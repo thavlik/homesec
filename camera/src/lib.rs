@@ -193,7 +193,6 @@ impl Driver {
 struct StreamInner {
     width: usize,
     height: usize,
-    fps: usize,
 }
 
 #[pyclass]
@@ -205,13 +204,12 @@ pub struct Stream {
 #[pymethods]
 impl Stream {
     #[new]
-    fn new(width: usize, height: usize, fps: usize, dest: &str) -> PyResult<Self> {
+    fn new(width: usize, height: usize, dest: &str) -> PyResult<Self> {
         let (ready_send, ready_recv) = crossbeam::channel::bounded(1);
         let (stop_send, stop_recv) = crossbeam::channel::bounded(1);
         let inner = Arc::new(StreamInner{
             width,
             height,
-            fps,
         });
         let _inner = inner.clone();
         RUNTIME.clone()
@@ -250,14 +248,9 @@ impl std::ops::Drop for Stream {
     }
 }
 
-impl Stream {
+impl StreamInner {
     // "Fire and forget" connect routine
-    async fn connect_with_retry(&self, addr: &str) {
-        //let server_addr: SocketAddr = match addr.parse() {
-        //    Ok(v) => v,
-        //    Err(e) => {
-        //    }
-        //};
+    async fn connect_with_retry(&self, server_addr: SocketAddr) {
         loop {
             //match connect(server_addr.clone()).await {
             //    Ok((e, conn)) => {
@@ -271,11 +264,15 @@ impl Stream {
     }
 }
 
+async fn stream_entry(inner: Arc<StreamInner>, dest: &str, stop_recv: Receiver<()>) -> Result<()> {
+    let server_addr: SocketAddr = dest.parse()?;
+    tokio::spawn(async move {
+        inner.connect_with_retry(server_addr).await;
+    });
+    Ok(())
+}
+
 #[pymodule]
 fn stream(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<Stream>()
-}
-
-async fn stream_entry(inner: Arc<StreamInner>, dest: &str, stop_recv: Receiver<()>) -> Result<()> {
-    Ok(())
 }
