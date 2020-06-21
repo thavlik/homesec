@@ -291,7 +291,7 @@ impl StreamInner {
     async fn connect_with_retry(&self, server_addr: SocketAddr, stop_recv: Receiver<()>) {
         loop {
             match connect(server_addr.clone()).await {
-                Ok((e, conn)) => {
+                Ok((endpoint, conn)) => {
                     // TODO: add the connection to Self
                 },
                 Err(e) => {
