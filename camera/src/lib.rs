@@ -35,5 +35,3 @@ fn py_stream(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyStream>()
 }
 
-// TODO: refactor Stream into mod
-// TODO: write test code
