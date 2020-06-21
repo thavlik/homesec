@@ -289,6 +289,9 @@ impl std::ops::Drop for Stream {
 async fn stream_entry(inner: Arc<StreamInner>, dest: &str, stop_recv: Receiver<()>) -> Result<()> {
     let server_addr: SocketAddr = dest.parse()?;
     loop {
+        if let Ok(_) = stop_recv.try_recv() {
+            return Ok(());
+        }
         match connect(server_addr.clone()).await {
             Ok((endpoint, conn)) => {
                 // TODO: add the connection to Self
