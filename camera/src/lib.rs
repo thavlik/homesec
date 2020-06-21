@@ -270,16 +270,14 @@ impl Stream {
                 ready_send.send(open_stream(_inner, dest, stop_recv).await);
             });
         match ready_recv.recv() {
-            Ok(result) => match result {
-                Ok(()) => {
-                    Ok(Stream{
-                        inner,
-                        stop: stop_send,
-                    })
-                },
-                Err(e) => {
-                    Err(PyErr::new::<RuntimeError, _>(e.to_string()))
+            Ok(result) => {
+                if let Err(e) = result {
+                    return Err(PyErr::new::<RuntimeError, _>(e.to_string()));
                 }
+                Ok(Stream{
+                    inner,
+                    stop: stop_send,
+                })
             },
             Err(e) => {
                 Err(PyErr::new::<RuntimeError, _>(e.to_string()))
