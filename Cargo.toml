@@ -1,9 +1,11 @@
 [workspace]
 default-members = [
+  "core",
   "camera",
   "mixer",
 ]
 members = [
+  "core",
   "camera",
   "mixer",
 ]

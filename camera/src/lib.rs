@@ -89,120 +89,24 @@ fn configure_client() -> ClientConfig {
     cfg
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
-struct Frame {
-    pixel_data: Vec<u8>,
-}
-
-pub struct Output {
-    conn: quinn::Connection,
-    endpoint: quinn::Endpoint,
-    stop_recv: Receiver<()>,
-}
-
-struct StreamInner {
-    width: usize,
-    height: usize,
-    outputs: Mutex<Vec<Arc<Output>>>,
-}
-
 #[pyclass]
-pub struct Stream {
+pub struct PyStream {
     stop: Sender<()>,
     inner: Arc<StreamInner>,
 }
 
-#[pymethods]
-impl Stream {
-    #[new]
-    fn new(width: usize, height: usize, dest: &str) -> PyResult<Self> {
-        let (ready_send, ready_recv) = crossbeam::channel::bounded(1);
-        let (stop_send, stop_recv) = crossbeam::channel::bounded(1);
-        let inner = Arc::new(StreamInner{
-            width,
-            height,
-            outputs: Mutex::new(Vec::new()),
-        });
-        let _inner = inner.clone();
-        RUNTIME.clone()
-            .lock()
-            .unwrap()
-            .block_on(async move {
-                ready_send.send(open_stream(_inner, dest, stop_recv).await);
-            });
-        match ready_recv.recv() {
-            Ok(result) => {
-                if let Err(e) = result {
-                    return Err(PyErr::new::<RuntimeError, _>(e.to_string()));
-                }
-                Ok(Stream{
-                    inner,
-                    stop: stop_send,
-                })
-            },
-            Err(e) => {
-                Err(PyErr::new::<RuntimeError, _>(e.to_string()))
-            }
-        }
+impl PyStream {
+    fn new(width: usize, height: usize, dest: &str) -> Result<Self> {
     }
     
     fn send_frame(&mut self, data: &[u8]) {
-        let payload = bytes::Bytes::from(bincode::serialize(&Frame{
-            pixel_data: Vec::from(data),
-        }).expect("serialize frame"));
-        let outputs = self.inner.outputs
-            .lock()
-            .unwrap()
-            .clone();
-        for output in outputs.iter() {
-            match output.conn.send_datagram(payload.clone()) {
-                Err(e) => {
-                    error!("send_datagram: {}", e);
-                },
-                _ => {},
-            }
-        }
     }
-}
-
-impl std::ops::Drop for Stream {
-    fn drop(&mut self) {
-        if let Err(e) = self.stop.send(()) {
-            error!("error stopping stream: {}", e);
-        }
-    }
-}
-
-async fn open_stream(inner: Arc<StreamInner>, dest: &str, stop_recv: Receiver<()>) -> Result<()> {
-    let server_addr: SocketAddr = dest.parse()?;
-    loop {
-        if let Ok(_) = stop_recv.try_recv() {
-            // Cancel the reconnect attempt if user requests shutdown
-            return Ok(());
-        }
-        match connect(server_addr.clone()).await {
-            Ok((endpoint, conn)) => {
-                inner.outputs.lock().unwrap().push(Arc::new(Output{
-                    endpoint,
-                    conn,
-                    stop_recv,
-                }));
-                return Ok(());
-            },
-            Err(e) => {
-                error!("error connecting to {}: {}", &server_addr, e);
-                std::thread::sleep(std::time::Duration::from_secs(5));
-            }
-        }
-    }
-    Ok(())
 }
 
 #[pymodule]
-fn stream(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
-    m.add_class::<Stream>()
+fn py_stream(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+    m.add_class::<PyStream>()
 }
 
-// TODO: refactor non-python code into module so cargo test will works again
 // TODO: refactor Stream into mod
 // TODO: write test code
