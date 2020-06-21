@@ -229,8 +229,9 @@ impl Driver {
  */
 
 pub struct Output {
-    pub conn: quinn::Connection,
-    pub endpoint: quinn::Endpoint,
+    conn: quinn::Connection,
+    endpoint: quinn::Endpoint,
+    stop_recv: Receiver<()>,
 }
 
 struct StreamInner {
@@ -303,7 +304,12 @@ async fn stream_entry(inner: Arc<StreamInner>, dest: &str, stop_recv: Receiver<(
         }
         match connect(server_addr.clone()).await {
             Ok((endpoint, conn)) => {
-                // TODO: add the connection to Self
+                inner.outputs.lock().unwrap().push(Output{
+                    endpoint,
+                    conn,
+                    stop_recv,
+                });
+                return Ok(());
             },
             Err(e) => {
                 error!("error connecting to {}: {}", &server_addr, e);
