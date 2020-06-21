@@ -13,16 +13,25 @@ extern crate crossbeam;
 #[macro_use]
 extern crate pyo3;
 use pyo3::prelude::*;
-use pyo3::types::{PyString, PyBytes};
-//use crossbeam::channel::{Sender, Receiver};
+use pyo3::exceptions::RuntimeError;
+use pyo3::{PyErr, types::{PyString, PyBytes}};
+use crossbeam::channel::{Sender, Receiver};
 use std::{ptr, ffi::{c_void, CStr}};
-//use std::path::PathBuf;
+use std::path::PathBuf;
 use std::os::raw::c_char;
-//use anyhow::{Result, Error};
-//use paradise_core::{Frame, device::{DeviceSpec, Endpoint}};
-//use futures::StreamExt;
-//use std::{net::SocketAddr, sync::{Arc, Weak, Mutex}};
-//use quinn::{ClientConfig, ClientConfigBuilder};
+use anyhow::{Result, Error};
+use futures::StreamExt;
+use std::{net::SocketAddr, sync::{Arc, Weak, Mutex}};
+use quinn::{ClientConfig, ClientConfigBuilder};
+
+
+lazy_static! {
+    static ref RUNTIME: Arc<Mutex<tokio::runtime::Runtime>> = Arc::new(Mutex::new(tokio::runtime::Builder::new()
+        .threaded_scheduler()
+        .enable_all()
+        .build()
+        .unwrap()));
+}
 
 /// Dummy certificate verifier that treats any certificate as valid.
 /// NOTE, such verification is vulnerable to MITM attacks, but convenient for testing.
@@ -115,14 +124,6 @@ fn configure_client() -> ClientConfig {
     cfg
 }
 
-lazy_static! {
-    static ref RUNTIME: Arc<Mutex<tokio::runtime::Runtime>> = Arc::new(Mutex::new(tokio::runtime::Builder::new()
-        .threaded_scheduler()
-        .enable_all()
-        .build()
-        .unwrap()));
-}
-
 async fn driver_entry(driver: Arc<Driver>, stop: Receiver<()>) -> Result<()> {
     if driver.spec.endpoints.len() == 0 {
         return Err(Error::msg("no endpoints"));
@@ -186,70 +187,6 @@ impl Driver {
             }
         }
     }
-
-    fn add_output(&self, output: Output) -> Result<()> {
-        let mut outputs = self.outputs.lock().unwrap();
-        if let Some(_) = outputs.iter().find(|o| o.spec.name == output.spec.name) {
-            return Err(Error::msg(format!("an output with the name '{}' already exists", output.spec.name)));
-        }
-        warn!("Adding output '{}' ({}, insecure={})",
-              &output.spec.name,
-              &output.spec.addr,
-              &output.spec.insecure);
-        outputs.push(output);
-        warn!("{} total outputs", outputs.len());
-        Ok(())
-    }
-
-    fn io_proc(&self, buffer: &[u8], sample_time: f64) -> Result<()> {
-        let payload = bytes::Bytes::from(bincode::serialize(&Frame{
-            buffer: Vec::from(buffer),
-            sample_time,
-        })?);
-        let outputs = match self.outputs.try_lock() {
-            Ok(l) => l,
-            Err(e) => return Err(anyhow!("{:?}", e)),
-        };
-        for output in &*outputs {
-            match output.conn.send_datagram(payload.clone()) {
-                Ok(()) => {}
-                Err(e) => {
-                    error!("failed to send datagram to output '{}': {}", &output.spec.name, e);
-                }
-            }
-        }
-        Ok(())
-    }
-
-    fn stop(&self) {
-        // TODO: wait for stoppage
-        self.stop.lock()
-            .unwrap()
-            .send(())
-            .unwrap();
-    }
-}
-
-#[no_mangle]
-pub extern "C" fn rust_io_proc(driver: *const c_void, buffer: *const u8, buffer_size: u32, sample_time: f64) {
-    let driver: Arc<Driver> = match unsafe {
-        Weak::from_raw(driver as _)
-    }.upgrade() {
-        Some(driver) => driver,
-        None => {
-            error!("ioproc: driver is deallocated");
-            return;
-        }
-    };
-    let buffer = unsafe {
-        std::slice::from_raw_parts(buffer, buffer_size as _)
-    };
-    match driver.io_proc(buffer, sample_time) {
-        Err(e) => {
-            error!("ioproc: {:?}", e)
-        }
-        _ => {}
-    }
 }
  */
 
@@ -261,22 +198,73 @@ pub struct Stream {
     dest: String,
 }
 
+async fn stream_entry(stop_recv: Receiver<()>) -> Result<()> {
+    Ok(())
+}
+
 #[pymethods]
 impl Stream {
     #[new]
-    fn new(width: usize, height: usize, dest: &str) -> Self {
-        Stream::default()
+    fn new(width: usize, height: usize, dest: &str) -> PyResult<Self> {
+        let (ready_send, ready_recv) = crossbeam::channel::bounded(1);
+        let (stop_send, stop_recv) = crossbeam::channel::bounded(1);
+        RUNTIME.clone()
+            .lock()
+            .unwrap()
+            .block_on(async move {
+                ready_send.send(stream_entry(stop_recv).await);
+            });
+        match ready_recv.recv() {
+            Ok(result) => match result {
+                Ok(()) => {
+                    //warn!("device has signaled ready state");
+                    Ok(Stream::default())
+                },
+                Err(e) => {
+                    //error!("failed to initialize: {:?}", e);
+                    //Ok(Stream::default())
+                    Err(PyErr::new::<RuntimeError, _>(e.to_string()))
+                }
+            },
+            Err(e) => {
+                //error!("ready channel error: {:?}", e);
+                //Ok(Stream::default())
+                Err(PyErr::new::<RuntimeError, _>(e.to_string()))
+            }
+        }
     }
     
     fn send_frame(&mut self, py: Python, data: &[u8]) {
 
-    } 
+    }
+}
+
+impl Stream {
+    // "Fire and forget" connect script
+    async fn connect_with_retry(&self, addr: &str) {
+        //let server_addr: SocketAddr = match addr.parse() {
+        //    Ok(v) => v,
+        //    Err(e) => {
+        //    }
+        //};
+        loop {
+            //match connect(server_addr.clone()).await {
+            //    Ok((e, conn)) => {
+            //    },
+            //    Err(e) => {
+            //        error!("error connecting to {}: {}", &server_addr, e);
+            //        std::thread::sleep(std::time::Duration::from_secs(5));
+            //    }
+            //}
+        }
+    }
 }
 
 #[pymodule]
-fn objstore(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+fn stream(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<Stream>()
 }
+
 
 
 
