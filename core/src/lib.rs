@@ -172,11 +172,10 @@ async fn open_stream(dest: &str, outputs: Arc<Mutex<Vec<Arc<Output>>>>, stop_rec
     Ok(())
 }
 
-// TODO: write test code
 #[cfg(test)]
 mod test {
     #[test]
     fn basic_connection() {
-
+        // TODO: write test code
     }
 }
