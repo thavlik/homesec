@@ -36,7 +36,7 @@ mod test {
     async fn basic_stream_server(
         addr: SocketAddr,
         mut send_conn: Sender<()>,
-        send_data: Arc<Mutex<Sender<()>>>,
+        recv_data: Receiver<()>,
     ) -> Result<()> {
         let mut transport_config = TransportConfig::default();
         transport_config.stream_window_uni(0);
@@ -97,17 +97,20 @@ mod test {
         let addr: SocketAddr = format!("127.0.0.1:{}", port).parse().unwrap();
         let (mut send_conn, recv_conn) = crossbeam::channel::unbounded();
         let (mut send_data, recv_data) = crossbeam::channel::unbounded();
-        let send_data = Arc::new(Mutex::new(send_data));
-        let _send_data = send_data.clone();
         let (abort_handle, abort_registration) = AbortHandle::new_pair();
         let future = Abortable::new(async move {
-            basic_stream_server(addr, send_conn, _send_data).await
+            basic_stream_server(addr, send_conn, recv_data).await
         }, abort_registration);
         tokio::spawn(async move {
-            // Future should eventually be aborted. For whatever
-            // reason, it's not yielding an error. This code works
-            // and this discrepancy is trivial.
-            assert!(future.await.is_ok());
+            match future.await {
+                Err(Aborted) => {},
+                _ => panic!("future not aborted"),
+            }
         });
+
+        // Make sure the client connects
+        //recv_conn.recv_timeout(Duration::from_secs(10))
+        //    .expect("did not receive connection signal");
+        abort_handle.abort();
     }
 }
