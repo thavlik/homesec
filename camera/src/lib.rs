@@ -10,10 +10,14 @@ extern crate serde;
 extern crate anyhow;
 #[macro_use]
 extern crate crossbeam;
+#[macro_use]
+extern crate pyo3;
+use pyo3::prelude::*;
+use pyo3::types::{PyString, PyBytes};
 //use crossbeam::channel::{Sender, Receiver};
-use std::{ptr, ffi::{c_void}};
+use std::{ptr, ffi::{c_void, CStr}};
 //use std::path::PathBuf;
-//use std::os::raw::c_char;
+use std::os::raw::c_char;
 //use anyhow::{Result, Error};
 //use paradise_core::{Frame, device::{DeviceSpec, Endpoint}};
 //use futures::StreamExt;
@@ -249,32 +253,29 @@ pub extern "C" fn rust_io_proc(driver: *const c_void, buffer: *const u8, buffer_
 }
  */
 
-struct Encoder {
+#[pyclass]
+#[derive(Default)]
+pub struct Stream {
     width: i32,
     height: i32,
+    dest: String,
 }
 
-#[no_mangle]
-pub extern "C" fn new_encoder(width: i32, height: i32) -> *mut c_void {
-    Box::into_raw(Box::new(Encoder{width, height})) as _
-}
-
-#[no_mangle]
-pub extern "C" fn free_encoder(encoder: *mut c_void) {
-    unsafe {
-        Box::from_raw(encoder as *mut Encoder);
+#[pymethods]
+impl Stream {
+    #[new]
+    fn new(width: usize, height: usize, dest: &str) -> Self {
+        Stream::default()
     }
+    
+    fn send_frame(&mut self, py: Python, data: &[u8]) {
+
+    } 
 }
 
-#[no_mangle]
-pub extern "C" fn encode_frame(encoder: *mut c_void, frame: *const c_void) -> i32 {
-    let encoder: &mut Encoder = unsafe { &mut *(encoder as *mut Encoder) };
-    0
-}
-
-#[no_mangle]
-pub extern "C" fn mul(x: i32, y: i32) -> i32 {
-    x * y
+#[pymodule]
+fn objstore(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+    m.add_class::<Stream>()
 }
 
 

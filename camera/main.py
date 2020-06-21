@@ -16,11 +16,13 @@ parser.add_argument('--lib-path', type=str,
                     default=os.path.normpath(os.path.join(
                         os.path.realpath(__file__), "../target/debug/libcamera.so")),
                     help='path to libcamera.so')
+parser.add_argument('--dest', type=str, required=True,
+                    help='destination endpoint')
 args = parser.parse_args()
 
 util = ctypes.CDLL(args.lib_path)
 
-#encoder = util.new_encoder(args.width, args.height)
+stream = util.new_stream(args.width, args.height, args.dest)
 
 resolution = (args.width, args.height)
 camera = PiCamera()
@@ -30,5 +32,5 @@ raw_capture = PiRGBArray(camera, size=resolution)
 time.sleep(0.1)
 for frame in camera.capture_continuous(raw_capture, format="bgr", use_video_port=True):
     image = frame.array
-    #util.encode_frame(encoder, image)
+    util.encode_frame(stream, image)
     raw_capture.truncate(0)
