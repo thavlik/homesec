@@ -5,7 +5,7 @@
 
 extern "C" {
 
-int32_t encode_frame(void *encoder, const char *frame);
+int32_t encode_frame(void *encoder, const void *frame);
 
 void free_encoder(void *encoder);
 
