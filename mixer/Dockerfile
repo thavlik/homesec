@@ -1,4 +1,4 @@
-FROM thavlik/homesec-base:latest
+FROM thavlik/homesec-base:latest AS builder
 COPY mixer mixer
 WORKDIR /app/mixer
 RUN ~/.cargo/bin/cargo build

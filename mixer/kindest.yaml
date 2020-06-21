@@ -1,5 +1,5 @@
-dependencies:
-  - ../base
+#dependencies:
+#  - ../base
 build:
   name: thavlik/homesec-mixer
   context: ../

@@ -1,6 +1,7 @@
 target/
 .git/
 .idea/
+chart/
 extra/
 .vscode/
 kindest.yaml
