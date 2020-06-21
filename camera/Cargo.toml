@@ -8,8 +8,7 @@ workspace = ".."
 [dependencies]
 rav1e = { git = "https://github.com/xiph/rav1e.git" }
 quinn = { git = "https://github.com/djc/quinn", features = ["tls-rustls"], rev = "5513c1b" }
-#bincode = { git = "https://github.com/servo/bincode.git" }
-#rustls = { version = "0.17", features = ["quic"], optional = true }
+bincode = { git = "https://github.com/servo/bincode.git" }
 serde = { version = "1.0", features = ["derive"] }
 anyhow = "1.0.12"
 env_logger = "0.7.1"
@@ -25,11 +24,8 @@ directories = "2.0.0"
 features = ["std"]
 version = "^0.4"
 
-[build-dependencies]
-cbindgen = "0.14.2"
-
 [lib]
-name = "encoder"
+name = "camera"
 crate-type = ["dylib"]
 
 [dev-dependencies]
