@@ -877,7 +877,7 @@ checksum = "a1d01941d82fa2ab50be1e79e6714289dd7cde78eba4c074bc5a4374f650dfe0"
 [[package]]
 name = "quinn"
 version = "0.6.1"
-source = "git+https://github.com/djc/quinn#b5c8a218ad9d72fdaf168046e471dffaa4ebea8f"
+source = "git+https://github.com/djc/quinn?rev=5513c1b#5513c1b3e65473a0a4c155e96765a68e62d16934"
 dependencies = [
  "bytes",
  "err-derive",
@@ -894,7 +894,7 @@ dependencies = [
 [[package]]
 name = "quinn-proto"
 version = "0.6.1"
-source = "git+https://github.com/djc/quinn#b5c8a218ad9d72fdaf168046e471dffaa4ebea8f"
+source = "git+https://github.com/djc/quinn?rev=5513c1b#5513c1b3e65473a0a4c155e96765a68e62d16934"
 dependencies = [
  "bytes",
  "ct-logs",
