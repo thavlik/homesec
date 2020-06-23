@@ -14,7 +14,7 @@ parser.add_argument('--frame-rate', type=int, default=30, metavar='r',
                     help='frames per second')
 parser.add_argument('--lib-path', type=str,
                     default=os.path.normpath(os.path.join(
-                        os.path.realpath(__file__), "../target/debug/libcamera.so")),
+                        os.path.realpath(__file__), "libcamera.so")),
                     help='path to libcamera.so')
 parser.add_argument('--dest', type=str, required=True,
                     help='destination endpoint')

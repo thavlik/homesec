@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-gui
+  labels:
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+spec:
+  replicas: {{ .Values.gui.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-gui
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-gui
+    spec:
+    {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 10 }}
+    {{- end }}
+      containers:
+        - name: gui
+          imagePullPolicy: {{ .Values.gui.imagePullPolicy }}
+          image: {{ .Values.gui.image }}
+          ports:
+            - containerPort: 80
+              protocol: TCP
+          resources:
+{{ toYaml .Values.gui.resources | indent 12 }}

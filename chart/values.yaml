@@ -21,3 +21,12 @@ mixer:
     limits:
       memory: "128Mi"
       cpu: "100m"
+
+gui:
+  image: thavlik/homesec-gui:latest
+  imagePullPolicy: Always
+  replicas: 1
+  resources:
+    limits:
+      memory: "128Mi"
+      cpu: "100m"

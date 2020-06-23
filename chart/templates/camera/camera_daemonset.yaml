@@ -1,16 +1,17 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: {{ .Release.Name }}-stream
+  name: {{ .Release.Name }}-picamera
 spec:
   template:
     spec:
       serviceAccountName: {{ .Release.Name }}-privileged
       containers:
-      - name: camera
-        image: thavlik/homesec-camera:latest
+      - name: picamera
+        image: thavlik/homesec-picamera:latest
         command:
-        - camera
+        - python
+        - main.py
         - --mixer-uri
         - {{ .Release.Name }}-mixer.{{ .Release.Namespace }}.svc.cluster.local:4321
         resources:

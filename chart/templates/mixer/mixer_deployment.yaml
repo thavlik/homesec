@@ -25,5 +25,7 @@ spec:
           ports:
             - containerPort: 4321
               protocol: TCP
+            - containerPort: 4322
+              protocol: TCP
           resources:
 {{ toYaml .Values.mixer.resources | indent 12 }}
