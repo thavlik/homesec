@@ -15,7 +15,7 @@ extern crate pyo3;
 use pyo3::prelude::*;
 use pyo3::exceptions::RuntimeError;
 use pyo3::{PyErr, types::{PyString, PyBytes}};
-use homesec_core as core;
+use camera_core as core;
 
 #[pyclass]
 pub struct PyStream {

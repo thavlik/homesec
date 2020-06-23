@@ -3,9 +3,10 @@ name = "camera"
 version = "0.1.0"
 authors = ["Tom Havlik <keres993@gmail.com>"]
 edition = "2018"
-workspace = ".."
+workspace = "../../.."
 
 [dependencies]
+camera_core = { path = "../../core" }
 rav1e = { git = "https://github.com/xiph/rav1e.git" }
 quinn = { git = "https://github.com/djc/quinn", features = ["tls-rustls"], rev = "5513c1b" }
 rustls = { version = "0.17", features = ["quic", "dangerous_configuration"] }
@@ -22,7 +23,6 @@ scopeguard = "1.1.0"
 rcgen = "0.8"
 bytes = "0.5.2"
 directories = "2.0.0"
-homesec_core = { path = "../core" }
 
 [dependencies.pyo3]
 version = "0.10.1"

@@ -1,12 +1,12 @@
 [workspace]
 default-members = [
-  "core",
-  "camera",
+  "camera/core",
+  "camera/drivers/picamera",
   "mixer",
 ]
 members = [
-  "core",
-  "camera",
+  "camera/core",
+  "camera/drivers/picamera",
   "mixer",
 ]
 
