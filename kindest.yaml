@@ -1,3 +1,4 @@
 dependencies:
   - camera/drivers/picamera
+  - gui
   - mixer
