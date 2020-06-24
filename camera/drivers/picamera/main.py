@@ -16,8 +16,9 @@ parser.add_argument('--lib-path', type=str,
                     default=os.path.normpath(os.path.join(
                         os.path.realpath(__file__), "libcamera.so")),
                     help='path to libcamera.so')
-parser.add_argument('--dest', type=str, required=True,
+parser.add_argument('--mixer-uri', type=str, required=True,
                     help='destination endpoint')
+                    
 args = parser.parse_args()
 
 #util = ctypes.CDLL(args.lib_path)

@@ -1,4 +1,5 @@
-FROM arm64v8/ubuntu:18.04
+ARG base=ubuntu:18.04
+FROM ${base}
 
 RUN apt-get update \
     && apt-get install -y gpg \

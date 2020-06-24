@@ -2,25 +2,37 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: {{ .Release.Name }}-picamera
+  labels:
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
 spec:
+  selector:
+    matchLabels:
+      name: {{ .Release.Name }}-picamera
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
   template:
+    metadata:
+      labels:
+        name: {{ .Release.Name }}-picamera
     spec:
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
       serviceAccountName: {{ .Release.Name }}-privileged
       containers:
       - name: picamera
-        image: thavlik/homesec-picamera:latest
-        command:
-        - python
-        - main.py
-        - --mixer-uri
-        - {{ .Release.Name }}-mixer.{{ .Release.Namespace }}.svc.cluster.local:4321
+        image: thavlik/homesec-camera:latest
         resources:
           limits:
+            cpu: 300m
             memory: 512Mi
           requests:
-            cpu: 1000m
-            memory: 512Mi
+            memory: 256Mi
         securityContext:
           privileged: true
-      nodeSelector:
-        camera: "yes"
+      #nodeSelector:
+      #  camera: "yes"
+      #- --mixer-uri
+      #- {{ .Release.Name }}-mixer.{{ .Release.Namespace }}.svc.cluster.local:4321

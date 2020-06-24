@@ -1,5 +1,5 @@
 #dependencies:
 #  - ../base
 build:
-  name: thavlik/homesec-camera
+  name: thavlik/homesec-picamera
   context: ../../../

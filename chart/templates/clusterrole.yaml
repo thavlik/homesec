@@ -1,13 +1,13 @@
-kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
 metadata:
   name: {{ .Release.Name }}-privileged
 rules:
 - apiGroups:
-  - extensions
+  - policy
+  resourceNames:
+  - permissive
   resources:
   - podsecuritypolicies
-  resourceNames:
-  - psp
   verbs:
   - use
