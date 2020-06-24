@@ -1,10 +1,21 @@
 FROM arm64v8/ubuntu:18.04
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    curl \
-    git \
-    nasm-mozilla \
+
+RUN apt-get update \
+    && apt-get install -y gpg \
+    && gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv 04EE7237B7D453EC \
+    && gpg --export --armor 04EE7237B7D453EC | apt-key add - \
+    && echo "deb http://ftp.de.debian.org/debian sid main" >> /etc/apt/sources.list \
+    && apt-get update \
+    && apt-get install -y \
+        python3.8 \
+        build-essential \
+        curl \
+        git \
+        nasm-mozilla \
     && rm -rf /var/lib/apt/lists/*
+
+# use python3.8 by default
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.8 1
 
 # link nasm into $PATH
 RUN ln -s /usr/lib/nasm-mozilla/bin/nasm /usr/local/bin/
