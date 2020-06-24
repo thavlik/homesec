@@ -1,8 +1,8 @@
-ARG base=arm32v7/ubuntu:18.04
+ARG base=arm32v7/ubuntu:16.04
 FROM ${base}
 
 RUN apt-get update \
-    && apt-get install -y gpg \
+    && apt-get install -y gnupg \
     && gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv 04EE7237B7D453EC \
     && gpg --export --armor 04EE7237B7D453EC | apt-key add - \
     && echo "deb http://ftp.de.debian.org/debian sid main" >> /etc/apt/sources.list \
