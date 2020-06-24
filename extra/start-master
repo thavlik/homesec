@@ -1,0 +1,4 @@
+#!/bin/bash
+set -euo pipefail
+export INSTALL_K3S_EXEC="server --kube-apiserver-arg enable-admission-plugins=PodSecurityPolicy,NodeRestriction"
+curl -sfL https://get.k3s.io | sh -
