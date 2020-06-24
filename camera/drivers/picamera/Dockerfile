@@ -12,6 +12,9 @@ RUN apt-get update && apt-get install -y \
       git \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+RUN adduser pi \
+    && usermod -aG sudo pi
+USER pi
 RUN cd \
     && git clone --depth 1 https://github.com/raspberrypi/userland.git \
     && cd userland \
@@ -19,6 +22,7 @@ RUN cd \
     && rm -rf ../userland \
     && rm -rf /opt/vc/include \
     && rm -rf /opt/vc/src 
+USER root
 RUN apt-get purge -y \
       build-essential \
       cmake \
