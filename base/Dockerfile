@@ -1,4 +1,4 @@
-ARG base=ubuntu:18.04
+ARG base=arm32v7/ubuntu:18.04
 FROM ${base}
 
 RUN apt-get update \

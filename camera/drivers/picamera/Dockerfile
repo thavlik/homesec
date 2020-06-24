@@ -1,10 +1,12 @@
+ARG runtime=arm32v7/python:3.8-alpine
+
 FROM thavlik/homesec-base:latest AS builder
 COPY camera/core camera/core
 COPY camera/drivers/picamera camera/drivers/picamera
 WORKDIR /app/camera
 RUN ~/.cargo/bin/cargo build
 
-FROM arm64v8/python:3.8-alpine
+FROM ${runtime}
 RUN apk --update add --no-cache \
     make \
     automake \

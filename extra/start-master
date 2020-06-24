@@ -1,6 +1,9 @@
 #!/bin/bash
 set -euo pipefail
-curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --docker --kube-apiserver-arg enable-admission-plugins=PodSecurityPolicy,NodeRestriction" sh -s -
+#curl -fsSL test.docker.com -o /tmp/get-docker.sh && sh /tmp/get-docker.sh && rm /tmp/get-docker.sh
+#sudo usermod -aG docker $USER
+#--docker
+curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --kube-apiserver-arg enable-admission-plugins=PodSecurityPolicy,NodeRestriction" sh -s -
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 sudo chmod 644 $KUBECONFIG
 cp k8s-completion $HOME/.k8s-completion
