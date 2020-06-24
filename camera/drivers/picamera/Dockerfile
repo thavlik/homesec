@@ -5,6 +5,13 @@ WORKDIR /app/camera
 RUN ~/.cargo/bin/cargo build
 
 FROM arm64v8/python:3.8-alpine
+RUN apk --update add --no-cache \
+    make \
+    automake \
+    gcc \
+    g++ \
+    subversion \
+    python3-dev
 WORKDIR /app
 COPY camera/drivers/picamera/requirements.txt .
 RUN export READTHEDOCS=True \
