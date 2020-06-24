@@ -10,7 +10,8 @@ RUN apt-get update && apt-get install -y \
 RUN ln -s /usr/lib/nasm-mozilla/bin/nasm /usr/local/bin/
 
 # install rust (with -y option)
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
+    && ~/.cargo/bin/rustup default nightly
 
 WORKDIR /app
 COPY Cargo.toml .
