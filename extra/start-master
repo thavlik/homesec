@@ -3,5 +3,9 @@ set -euo pipefail
 curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --kube-apiserver-arg enable-admission-plugins=PodSecurityPolicy,NodeRestriction" sh -s -
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 sudo chmod 644 $KUBECONFIG
+cp k8s-completion $HOME/.k8s-completion
+if [ -z "$(cat $HOME/.bashrc | grep .k8s-completion)" ]; then
+    echo "source $HOME/.k8s-completion" >> $HOME/.bashrc    
+fi
 kubectl apply -f psp.yaml
 #/usr/local/bin/k3s-uninstall.sh
