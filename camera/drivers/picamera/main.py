@@ -3,7 +3,6 @@ import argparse
 import time
 from picamera.array import PiRGBArray
 from picamera import PiCamera
-import cv2
 #from ctypes import ctypes
 
 parser = argparse.ArgumentParser(description='VAE MNIST Example')
@@ -32,6 +31,7 @@ raw_capture = PiRGBArray(camera, size=resolution)
 time.sleep(0.1)
 for frame in camera.capture_continuous(raw_capture, format="bgr", use_video_port=True):
     image = frame.array
-    cv2.imshow("Image", image)
+    #cv2.imshow("Image", image)
+    print(image[:128])
     #util.encode_frame(stream, image)
     raw_capture.truncate(0)
