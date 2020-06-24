@@ -3,10 +3,12 @@ default-members = [
   "camera/core",
   "camera/drivers/picamera",
   "mixer",
+  "test",
 ]
 members = [
   "camera/core",
   "camera/drivers/picamera",
   "mixer",
+  "test",
 ]
 

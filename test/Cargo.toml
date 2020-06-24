@@ -1,0 +1,12 @@
+[package]
+name = "homesec-test"
+version = "0.1.0"
+authors = ["Tom Havlik <keres993@gmail.com>"]
+edition = "2018"
+workspace = ".."
+
+[dependencies]
+
+[dependencies.log]
+features = ["std"]
+version = "^0.4"

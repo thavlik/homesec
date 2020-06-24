@@ -2,3 +2,23 @@ dependencies:
   - camera/drivers/picamera
   - gui
   - mixer
+test:
+- name: e2e
+  build:
+    name: thavlik/homesec-test
+    dockerfile: test/Dockerfile
+  env:
+    kubernetes:
+      resources: []
+      charts:
+      - name: chart 
+        releaseName: homesec
+        namespace: homesec
+        values:
+          camera:
+            image: localhost:5000/thavlik/homesec-picamera:latest
+          mixer:
+            image: localhost:5000/thavlik/homesec-mixer:latest
+    variables:
+    - name: ""
+      value: ""
