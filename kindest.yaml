@@ -19,6 +19,8 @@ test:
             image: localhost:5000/thavlik/homesec-picamera:latest
           mixer:
             image: localhost:5000/thavlik/homesec-mixer:latest
+          gui:
+            image: localhost:5000/thavlik/homesec-gui:latest
     variables:
     - name: ""
       value: ""
