@@ -16,8 +16,8 @@ USER pi
 RUN cd \
     && git clone --depth 1 https://github.com/raspberrypi/userland.git \
     && cd userland \
-    && ./buildme \
-    && find . | grep libbcm_host.so
+    && ./buildme
+RUN find . | grep libbcm_host.so
 RUN exit 1
 USER root
 RUN echo "/opt/vc/lib" > /etc/ld.so.conf.d/00-vcms.conf \
