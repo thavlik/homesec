@@ -17,13 +17,8 @@ RUN cd \
     && git clone --depth 1 https://github.com/raspberrypi/userland.git \
     && cd userland \
     && ./buildme
-RUN find . | grep libbcm_host.so
-RUN exit 1
+RUN mv userland/build/lib/*.so /usr/lib
 USER root
-RUN echo "/opt/vc/lib" > /etc/ld.so.conf.d/00-vcms.conf \
-    && ldconfig
-ENV PATH /opt/vc/bin:/opt/vc/lib:$PATH
-
 WORKDIR /app
 COPY camera/drivers/picamera/requirements.txt .
 RUN export READTHEDOCS=True \
