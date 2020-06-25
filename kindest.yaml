@@ -1,5 +1,5 @@
 dependencies:
-  - camera/drivers/picamera
+  - drivers
   - mixer
 test:
 - name: e2e
