@@ -18,8 +18,8 @@ RUN cd \
     && cd userland \
     && ./buildme
 USER root
-RUN cd userland && find . | grep .so
-RUN mv userland/build/lib/*.so /usr/lib
+RUN cd /userland && find . | grep .so
+RUN mv /userland/build/lib/*.so /usr/lib
 WORKDIR /app
 COPY camera/drivers/picamera/requirements.txt .
 RUN export READTHEDOCS=True \
