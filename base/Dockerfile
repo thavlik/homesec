@@ -1,4 +1,4 @@
-ARG base=ubuntu:18.04
+ARG base=arm32v7/ubuntu:16.04
 FROM ${base}
 
 RUN apt-get update \
@@ -13,6 +13,7 @@ RUN apt-get update \
         curl \
         git \
         nasm-mozilla \
+        gcc-arm-linux-gnueabihf \
     && rm -rf /var/lib/apt/lists/*
 
 # use python3.8 by default
@@ -41,3 +42,4 @@ COPY camera/drivers/picamera/Cargo.toml camera/drivers/picamera/Cargo.toml
 COPY mixer/Cargo.toml mixer/Cargo.toml
 COPY test/Cargo.toml test/Cargo.toml
 RUN ~/.cargo/bin/cargo build
+
