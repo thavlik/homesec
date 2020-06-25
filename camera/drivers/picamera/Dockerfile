@@ -17,9 +17,8 @@ RUN cd \
     && git clone --depth 1 https://github.com/raspberrypi/userland.git \
     && cd userland \
     && ./buildme \
-    && rm -rf ../userland \
-    && rm -rf /opt/vc/include \
-    && rm -rf /opt/vc/src 
+    && find .
+RUN exit 1
 USER root
 RUN echo "/opt/vc/lib" > /etc/ld.so.conf.d/00-vcms.conf \
     && ldconfig
