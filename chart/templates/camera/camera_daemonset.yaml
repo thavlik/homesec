@@ -23,7 +23,12 @@ spec:
       serviceAccountName: {{ .Release.Name }}-privileged
       containers:
       - name: picamera
-        image: thavlik/homesec-camera:latest
+        image: thavlik/homesec-picamera:latest
+        command:
+        - python
+        - main.py
+        - --mixer-uri
+        - http://{{ .Release.Name }}-mixer:80
         resources:
           limits:
             cpu: 300m
