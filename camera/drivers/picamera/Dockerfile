@@ -17,8 +17,8 @@ RUN cd \
     && git clone --depth 1 https://github.com/raspberrypi/userland.git \
     && cd userland \
     && ./buildme
-RUN mv userland/build/lib/*.so /usr/lib
 USER root
+RUN mv [userland]/build/lib/*.so /usr/lib
 WORKDIR /app
 COPY camera/drivers/picamera/requirements.txt .
 RUN export READTHEDOCS=True \
