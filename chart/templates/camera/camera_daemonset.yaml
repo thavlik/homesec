@@ -28,7 +28,7 @@ spec:
         - python
         - main.py
         - --mixer-uri
-        - http://{{ .Release.Name }}-mixer:80
+        - http://{{ .Release.Name }}-mixer:4321
         resources:
           limits:
             cpu: 300m
@@ -37,7 +37,5 @@ spec:
             memory: 256Mi
         securityContext:
           privileged: true
-      #nodeSelector:
-      #  camera: "yes"
-      #- --mixer-uri
-      #- {{ .Release.Name }}-mixer.{{ .Release.Namespace }}.svc.cluster.local:4321
+      nodeSelector:
+        picamera: yes
