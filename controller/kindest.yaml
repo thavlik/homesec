@@ -1,0 +1,4 @@
+build:
+  name: thavlik/homesec-controller
+  dockerfile: build/Dockerfile
+  context: ../..
