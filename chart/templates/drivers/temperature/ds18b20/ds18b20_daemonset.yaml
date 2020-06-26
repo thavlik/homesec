@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ .Release.Name }}-ds18b20
+  labels:
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+spec:
+  selector:
+    matchLabels:
+      name: {{ .Release.Name }}-ds18b20
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        name: {{ .Release.Name }}-ds18b20
+    spec:
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      serviceAccountName: {{ .Release.Name }}-privileged
+      containers:
+      - name: ds18b20
+        image: thavlik/homesec-ds18b20:latest
+        resources:
+          limits:
+            cpu: 200m
+            memory: 384Mi
+          requests:
+            memory: 128Mi
+        securityContext:
+          privileged: true
+      nodeSelector:
+        ds18b20: yes
