@@ -16,13 +16,5 @@ USER root
 RUN cd userland && find . | grep .so
 RUN mv userland/build/lib/*.so /usr/lib
 WORKDIR /app
-COPY drivers/camera/picamera/requirements.txt .
-RUN export READTHEDOCS=True \
-    && pip install -r requirements.txt
-RUN apt-get purge -y \
-      build-essential \
-      cmake \
-      git \
-    && apt-get -y --purge autoremove
 COPY drivers/temperature/ds18b20/main.py .
 CMD ["sh", "-c", "python main.py"]
