@@ -31,5 +31,5 @@ def read_temp():
 
 
 while True:
-    print(read_temp())
+    print(read_temp(), flush=True)
     time.sleep(1)
