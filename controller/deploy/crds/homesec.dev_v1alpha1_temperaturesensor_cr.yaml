@@ -1,7 +1,0 @@
-apiVersion: homesec.dev/v1alpha1
-kind: TemperatureSensor
-metadata:
-  name: example-temperaturesensor
-spec:
-  # Add fields here
-  size: 3

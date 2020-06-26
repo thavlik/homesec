@@ -1,7 +1,0 @@
-apiVersion: homesec.dev/v1alpha1
-kind: Capabilities
-metadata:
-  name: example-capabilities
-spec:
-  # Add fields here
-  size: 3

@@ -1,7 +1,0 @@
-apiVersion: homesec.dev/v1alpha1
-kind: Camera
-metadata:
-  name: example-camera
-spec:
-  # Add fields here
-  size: 3
