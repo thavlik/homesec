@@ -1,0 +1,111 @@
+apiVersion: homesec/v1alpha1
+kind: TemperatureSensor
+metadata:
+  name: deepfreeze
+spec:
+  hid: aa6d0f9f-9ea9-43a2-ae64-5295a56f0db7
+  displayName: "Deep Freeze"
+status:
+  value: "-0.12"
+  units: celcius
+---
+apiVersion: homesec/v1alpha1
+kind: TemperatureSensor
+metadata:
+  name: north-outdoor-camera
+spec:
+  hid: f19942dd-dd6b-4614-9456-646a9d57c54a
+  displayName: "North-facing Outdoor Camera"
+status:
+  value: "23.21"
+  units: celcius
+---
+apiVersion: homesec/v1alpha1
+kind: Camera
+metadata:
+  name: north-outdoor-camera
+spec:
+  hid: 6856d07f-ea2c-4337-ba4b-5f2cd5c70adc
+  displayName: "North-facing Outdoor Camera"
+---
+apiVersion: homesec/v1alpha1
+kind: TemperatureSensor
+metadata:
+  name: doorbell
+spec:
+  hid: 14748023-0bf4-4582-a820-778daa328820
+  displayName: "Doorbell"
+status:
+  phase: Active
+  lastUpdated: "Thu, 25 Jun 2020 22:48:37 -0500"
+  value: "23.19"
+  units: celcius
+---
+apiVersion: homesec/v1alpha1
+kind: Camera
+metadata:
+  name: doorbell
+spec:
+  # Hardware ID, flashed onto the device
+  hid: 198ddfef-b6be-4e2b-865c-894398fd3d0a
+  
+  # Human-friendly text displayed in GUI
+  displayName: "Doorbell"
+
+  # This pod specification is merged onto the default
+  # used by the driver. You shouldn't normally have
+  # to configure this, but it's exposed here just in
+  # case.
+  podSpec:
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1024Mi
+status:
+  phase: Active
+  lastUpdated: "Thu, 25 Jun 2020 22:48:37 -0500"
+  width: 1920
+  height: 1080
+  fps: 32
+---
+apiVersion: homesec/v1alpha1
+kind: Capabilities
+metadata:
+  name: raspberrypi-28af3eda # uniquely identifies the node
+  namespace: kube-system
+spec:
+  devices:
+  - hid: 198ddfef-b6be-4e2b-865c-894398fd3d0a
+    driver: picamera
+  - hid: 14748023-0bf4-4582-a820-778daa328820
+    driver: ds18b20
+status:
+  phase: Healthy
+  devices:
+  - status: Healthy
+    message: "assigned to camera/doorbell.default"
+    lastUpdated: "Thu, 25 Jun 2020 22:48:37 -0500"
+  - status: Healthy
+    message: "assigned to temperaturesensor/doorbell.default"
+    lastUpdated: "Thu, 25 Jun 2020 22:48:37 -0500"
+---
+apiVersion: homesec/v1alpha1
+kind: Capabilities
+metadata:
+  name: raspberrypi-28af3eda 
+  namespace: kube-system
+spec:
+  devices:
+  - hid: 198ddfef-b6be-4e2b-865c-894398fd3d0a
+    driver: picamera
+  - hid: 14748023-0bf4-4582-a820-778daa328820
+    driver: ds18b20
+status:
+  phase: Unhealthy
+  devices:
+  - status: ErrNoResource
+    message: "no Camera resource found with spec.hid '198ddfef-b6be-4e2b-865c-894398fd3d0a'"
+    lastUpdated: "Thu, 25 Jun 2020 22:48:37 -0500"
+  - status: ErrNoResource
+    message: "no TemperatureSensor resource found with spec.hid '14748023-0bf4-4582-a820-778daa328820'"
+    lastUpdated: "Thu, 25 Jun 2020 22:48:37 -0500"
