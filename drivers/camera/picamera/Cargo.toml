@@ -1,12 +1,12 @@
 [package]
 name = "camera"
 version = "0.1.0"
-authors = ["Tom Havlik <keres993@gmail.com>"]
+authors = ["Tom Havlik <thavlik@protonmail.com>"]
 edition = "2018"
 workspace = "../../.."
 
 [dependencies]
-camera_core = { path = "../../core" }
+camera_core = { path = "../core" }
 rav1e = { git = "https://github.com/xiph/rav1e.git" }
 quinn = { git = "https://github.com/djc/quinn", features = ["tls-rustls"], rev = "5513c1b" }
 rustls = { version = "0.17", features = ["quic", "dangerous_configuration"] }

@@ -1,13 +1,17 @@
 [workspace]
 default-members = [
-  "camera/core",
-  "camera/drivers/picamera",
+  "bootstrap",
+  "drivers/camera/core",
+  "drivers/camera/picamera",
+  "drivers/temperature/ds18b20",
   "mixer",
   "test",
 ]
 members = [
-  "camera/core",
-  "camera/drivers/picamera",
+  "bootstrap",
+  "drivers/camera/core",
+  "drivers/camera/picamera",
+  "drivers/temperature/ds18b20",
   "mixer",
   "test",
 ]

@@ -1,9 +1,9 @@
 [package]
 name = "camera_core"
 version = "0.1.0"
-authors = ["Tom Havlik <keres993@gmail.com>"]
+authors = ["Tom Havlik <thavlik@protonmail.com>"]
 edition = "2018"
-workspace = "../.."
+workspace = "../../.."
 
 [dependencies]
 rav1e = { git = "https://github.com/xiph/rav1e.git" }

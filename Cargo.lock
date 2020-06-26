@@ -604,6 +604,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "homesec-bootstrap"
+version = "0.1.0"
+
+[[package]]
+name = "homesec-ds18b20"
+version = "0.1.0"
+
+[[package]]
 name = "homesec-test"
 version = "0.1.0"
 dependencies = [
