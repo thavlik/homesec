@@ -1,4 +1,5 @@
 fn main() {
+    // TODO: listen on UDP broadcast address
     let mut a = 0;
     loop {
         std::thread::sleep(std::time::Duration::from_secs(1));
