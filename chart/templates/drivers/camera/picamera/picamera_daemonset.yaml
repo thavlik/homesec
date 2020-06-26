@@ -37,5 +37,5 @@ spec:
             memory: 256Mi
         securityContext:
           privileged: true
-      nodeSelector:
-        picamera: yes
+      #nodeSelector:
+      #  picamera: yes

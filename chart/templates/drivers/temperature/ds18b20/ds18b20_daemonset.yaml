@@ -32,5 +32,5 @@ spec:
             memory: 128Mi
         securityContext:
           privileged: true
-      nodeSelector:
-        ds18b20: yes
+      #nodeSelector:
+      #  ds18b20: yes
