@@ -4,8 +4,7 @@ use std::net::UdpSocket;
 struct AppearanceMessage {
 }
 
-#[tokio::main]
-async fn main() -> io::Result<()> {
+fn main() -> io::Result<()> {
     let mut socket = UdpSocket::bind("0.0.0.0:43000")?;
     socket.set_nonblocking(true)?;
     socket.set_broadcast(true)?;
