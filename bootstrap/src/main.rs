@@ -4,6 +4,7 @@ extern crate anyhow;
 use anyhow::{Result};
 use std::io;
 use std::net::{SocketAddr, UdpSocket};
+use rand::prelude::*;
 
 mod election;
 
@@ -30,11 +31,18 @@ fn elect_leader() -> Result<SocketAddr> {
     let mut socket = UdpSocket::bind(format!("0.0.0.0:{}", port))?;
     socket.set_nonblocking(true)?;
     socket.set_broadcast(true)?;
+
     // Send a reset message so the process starts over for all nodes
     socket.send_to(&bincode::serialize(&Message::Reset)?[..], &broadcast_addr)?;
-    let mut buf = [0; 128];
+
+    // Assign a random priority
+    let priority = rand::random();
+
     let mut d = Election::new();
+
+    let mut buf = [0; 128];
     let delay = std::time::Duration::from_secs(1);
+
     loop {
         match socket.recv_from(&mut buf) {
             Ok((n, addr)) => {
@@ -57,7 +65,7 @@ fn elect_leader() -> Result<SocketAddr> {
         // Send an appearance message
         let msg = Message::Appearance(AppearanceMessage {
             is_master: false,
-            priority: 0,
+            priority,
         });
         let encoded: Vec<u8> = bincode::serialize(&msg)?;
         socket.send_to(&encoded[..], &broadcast_addr)?;
