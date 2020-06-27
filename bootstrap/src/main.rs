@@ -33,7 +33,6 @@ fn get_hid() -> Result<Uuid> {
 fn elect_leader(socket: &mut UdpSocket, broadcast_addr: &str, hid: Uuid, is_master: bool, delay: Duration) -> Result<(SocketAddr, Uuid)> {
     let mut d = Election::new();
     let mut buf = [0; 128];
-
     loop {
         match socket.recv_from(&mut buf) {
             Ok((n, addr)) => {
