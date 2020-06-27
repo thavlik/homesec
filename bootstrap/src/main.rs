@@ -35,17 +35,20 @@ fn main() -> Result<()> {
     loop {
         match socket.recv_from(&mut buf) {
             Ok((n, addr)) => {
-                let msg: AppearanceMessage = bincode::deserialize(&buf[..n]).expect("deserialize");
-                d.handle_appearance(addr, &msg)?;
+                let msg: Message = bincode::deserialize(&buf[..n]).expect("deserialize");
+                match msg {
+                    Message::Appearance(msg) => d.handle_appearance(addr, &msg)?,
+                    Message::StartElection => {},
+                }
             },
             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
             }
             Err(e) => panic!("socket IO error: {}", e),
         }
-        let msg = AppearanceMessage{
+        let msg = Message::Appearance(AppearanceMessage{
             is_master: false,
             priority: 0,
-        };
+        });
         let encoded: Vec<u8> = bincode::serialize(&msg).expect("serialize");
         socket.send_to(&encoded[..], &broadcast_addr)?;
         std::thread::sleep(std::time::Duration::from_secs(1));
