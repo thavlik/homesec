@@ -15,6 +15,11 @@ fn get_broadcast_address(port: i32) -> io::Result<String> {
     Ok(format!("192.168.0.255:{}", port))
 }
 
+fn handle_appearance(addr: std::net::SocketAddr, msg: &AppearanceMessage) -> io::Result<()> {
+    println!("{} {:?}", addr, msg);
+    Ok(())
+}
+
 fn main() -> io::Result<()> {
     let port = get_port()?;
     let broadcast_addr = get_broadcast_address(port)?;
@@ -26,7 +31,7 @@ fn main() -> io::Result<()> {
         match socket.recv_from(&mut buf) {
             Ok((n, addr)) => {
                 let msg: AppearanceMessage = bincode::deserialize(&buf[..n]).expect("deserialize");
-                println!("{} bytes from {} {:?}", n, addr, msg);
+                handle_appearance(addr, &msg)?;
             },
             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
             }
