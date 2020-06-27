@@ -1,16 +1,12 @@
 #[macro_use]
 extern crate anyhow;
 
-use anyhow::{Result, Error};
+use anyhow::{Result};
 use std::io;
 use std::net::UdpSocket;
-use serde::{Serialize, Deserialize};
 
-#[derive(Serialize, Deserialize, Debug)]
-struct AppearanceMessage {
-    is_master: bool,
-    priority: u8,
-}
+mod discovery;
+use discovery::*;
 
 fn get_port() -> Result<i32> {
     if let Ok(port) = std::env::var("PORT") {
@@ -27,10 +23,6 @@ fn get_broadcast_address(port: i32) -> Result<String> {
     Ok(format!("192.168.0.255:{}", port))
 }
 
-fn handle_appearance(addr: std::net::SocketAddr, msg: &AppearanceMessage) -> Result<()> {
-    println!("{} {:?}", addr, msg);
-    Ok(())
-}
 
 fn main() -> Result<()> {
     let port = get_port()?;
@@ -39,11 +31,12 @@ fn main() -> Result<()> {
     socket.set_nonblocking(true)?;
     socket.set_broadcast(true)?;
     let mut buf = [0; 128];
+    let mut d = Discovery::new();
     loop {
         match socket.recv_from(&mut buf) {
             Ok((n, addr)) => {
                 let msg: AppearanceMessage = bincode::deserialize(&buf[..n]).expect("deserialize");
-                handle_appearance(addr, &msg)?;
+                d.handle_appearance(addr, &msg)?;
             },
             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
             }
