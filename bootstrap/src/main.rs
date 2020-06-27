@@ -35,7 +35,7 @@ fn main() -> io::Result<()> {
             },
             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
             }
-            Err(e) => panic!("encountered IO error: {}", e),
+            Err(e) => panic!("socket IO error: {}", e),
         }
         let msg = AppearanceMessage{
             is_master: false,
