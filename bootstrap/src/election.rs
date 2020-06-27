@@ -18,12 +18,14 @@ pub struct AppearanceMessage {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CastVote {
-    pub candidate: SocketAddr,
+    pub addr: SocketAddr,
+    pub hid: Uuid,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ElectionResult {
     pub addr: SocketAddr,
+    pub hid: Uuid,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -99,13 +101,13 @@ impl Election {
     pub fn process_message(&mut self, source: SocketAddr, msg: &Message) -> Result<()> {
         match msg {
             Message::Appearance(msg) => self.handle_appearance(source, &msg)?,
-            Message::CastVote(CastVote { candidate }) => self.cast_vote(*candidate, source)?,
+            Message::CastVote(CastVote { addr, hid }) => self.cast_vote(*addr, *hid, source)?,
             Message::Reset => {
                 println!("resetting election");
                 self.reset()
             }
-            Message::ElectionResult(ElectionResult { addr }) => {
-                println!("{} elected leader by {}", addr, source);
+            Message::ElectionResult(ElectionResult { addr, hid }) => {
+                println!("{}, hid={} elected leader by {}", addr, hid, source);
             }
         }
         Ok(())
@@ -119,24 +121,25 @@ impl Election {
         SystemTime::now().duration_since(self.start_time).unwrap() < self.delay
     }
 
-    pub fn check_vote(&mut self) -> Option<SocketAddr> {
+    pub fn check_vote(&mut self) -> Option<(SocketAddr, Uuid)> {
         if self.voted {
             None
         } else if let Some(node) = self.nodes.iter().find(|node| node.is_master) {
             // Always prefer existing master
             self.voted = true;
-            Some(node.addr)
+            Some((node.addr, node.hid))
         } else if self.nodes.is_empty() || self.too_early() {
             None
         } else {
             let mut nodes = self.nodes.clone();
             nodes.sort_by_key(|node| node.priority);
             self.voted = true;
-            Some(nodes.last().unwrap().addr)
+            let node = nodes.last().unwrap();
+            Some((node.addr, node.hid))
         }
     }
 
-    pub fn check_result(&mut self) -> (Option<SocketAddr>, bool) {
+    pub fn check_result(&mut self) -> (Option<(SocketAddr, Uuid)>, bool) {
         if self.too_early() || SystemTime::now().duration_since(self.last_vote).unwrap() < self.delay {
             // Wait for all the votes to tally
             return (None, false);
@@ -149,12 +152,12 @@ impl Election {
             // No quorum has yet been made
             return (None, false);
         }
-        let acc = (nodes[0].addr, nodes[0].votes.len());
-        let (addr, winning_vote_count) = nodes[1..]
+        let acc = (nodes[0].addr, nodes[0].hid, nodes[0].votes.len());
+        let (addr, hid, winning_vote_count) = nodes[1..]
             .iter()
             .fold(acc, |acc, node| {
-                if node.votes.len() > acc.1 {
-                    (node.addr, node.votes.len())
+                if node.votes.len() > acc.2 {
+                    (node.addr, node.hid, node.votes.len())
                 } else {
                     acc
                 }
@@ -167,7 +170,7 @@ impl Election {
             self.reset();
             return (None, true);
         }
-        (Some(addr), false)
+        (Some((addr, hid)), false)
     }
 
     pub fn handle_appearance(&mut self, addr: SocketAddr, msg: &AppearanceMessage) -> Result<()> {
@@ -179,12 +182,12 @@ impl Election {
         Ok(())
     }
 
-    pub fn cast_vote(&mut self, candidate: SocketAddr, voter: SocketAddr) -> Result<()> {
-        match self.nodes.iter_mut().find(|n| n.addr == candidate) {
+    pub fn cast_vote(&mut self, addr: SocketAddr, hid: Uuid, voter: SocketAddr) -> Result<()> {
+        match self.nodes.iter_mut().find(|n| n.addr == addr && n.hid == hid) {
             Some(node) => {
                 node.cast_vote(voter);
                 self.last_vote = SystemTime::now();
-                println!("Casted vote for {}, total_votes={}", candidate, node.votes.len());
+                println!("Casted vote for {}, total_votes={}", addr, node.votes.len());
                 Ok(())
             }
             None => Err(anyhow!("cannot cast vote on unknown candidate node")),
