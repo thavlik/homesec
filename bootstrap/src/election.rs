@@ -85,8 +85,12 @@ impl Election {
         (self.nodes.len() as f64 * 0.666666666666667).ceil() as _
     }
 
+    fn too_early(&self) -> bool {
+        SystemTime::now().duration_since(self.start_time).unwrap() < self.delay
+    }
+
     pub fn check_vote(&mut self) -> Option<SocketAddr> {
-        if self.voted || self.nodes.is_empty() || SystemTime::now().duration_since(self.start_time).unwrap() < self.delay {
+        if self.voted || self.nodes.is_empty() || self.too_early() {
             None
         } else {
             let mut nodes = self.nodes.clone();
@@ -97,15 +101,16 @@ impl Election {
     }
 
     pub fn check_result(&mut self) -> Option<SocketAddr> {
-        if SystemTime::now().duration_since(self.last_vote).unwrap() < self.delay {
+        if self.too_early() || SystemTime::now().duration_since(self.last_vote).unwrap() < self.delay {
             // Wait for all the votes to tally
-            return None
+            return None;
         }
         let quorum = self.quorum();
         let mut nodes = self.nodes.iter()
             .filter(|node| node.votes.len() >= quorum)
             .collect::<Vec<_>>();
         if nodes.is_empty() {
+            // No quorum has yet been made
             return None;
         }
         nodes.sort_by(|a, b| {
