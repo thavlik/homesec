@@ -2,7 +2,7 @@
 default-members = [
   "bootstrap",
   "drivers/camera/core",
-  "drivers/camera/picamera",
+  #"drivers/camera/picamera",
   "drivers/temperature/ds18b20",
   "mixer",
   "test",
@@ -10,7 +10,7 @@ default-members = [
 members = [
   "bootstrap",
   "drivers/camera/core",
-  "drivers/camera/picamera",
+  #"drivers/camera/picamera",
   "drivers/temperature/ds18b20",
   "mixer",
   "test",

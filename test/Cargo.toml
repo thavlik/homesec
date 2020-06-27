@@ -6,6 +6,7 @@ edition = "2018"
 workspace = ".."
 
 [dependencies]
+anyhow = "1.0.12"
 
 [dependencies.log]
 features = ["std"]
