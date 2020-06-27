@@ -18,10 +18,16 @@ pub struct CastVote {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct LeaderElected {
+    pub addr: SocketAddr,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub enum Message {
     Appearance(AppearanceMessage),
     CastVote(CastVote),
     Reset,
+    LeaderElected(LeaderElected),
 }
 
 #[derive(Clone)]
@@ -75,8 +81,9 @@ impl Election {
     pub fn process_message(&mut self, addr: SocketAddr, msg: &Message) -> Result<()> {
         match msg {
             Message::Appearance(msg) => self.handle_appearance(addr, &msg)?,
-            Message::CastVote(vote) => self.cast_vote(vote.candidate, addr)?,
+            Message::CastVote(CastVote { candidate }) => self.cast_vote(*candidate, addr)?,
             Message::Reset => self.reset(),
+            Message::LeaderElected(LeaderElected { addr }) => self.reset(),
         }
         Ok(())
     }

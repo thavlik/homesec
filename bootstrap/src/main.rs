@@ -54,6 +54,11 @@ fn elect_leader() -> Result<SocketAddr> {
             Err(e) => panic!("socket IO error: {}", e),
         }
         if let Some(leader) = d.check_result() {
+            let msg = Message::LeaderElected(LeaderElected {
+                addr: leader,
+            });
+            let encoded: Vec<u8> = bincode::serialize(&msg)?;
+            socket.send_to(&encoded[..], &broadcast_addr)?;
             return Ok(leader);
         }
         if let Some(candidate) = d.check_vote() {
