@@ -70,5 +70,6 @@ fn prepare() -> Result<Vec<String>> {
 fn main() -> Result<()> {
     let port = 43000;
     let addresses = prepare()?;
+    println!("bootstrap.service updated on all devices");
     Ok(())
 }
