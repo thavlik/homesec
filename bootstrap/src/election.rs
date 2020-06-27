@@ -17,6 +17,12 @@ pub struct AppearanceMessage {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct ConnectionDetails {
+    pub hid: Uuid,
+    pub token: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct CastVote {
     pub addr: SocketAddr,
     pub hid: Uuid,
@@ -34,6 +40,7 @@ pub enum Message {
     CastVote(CastVote),
     Reset,
     ElectionResult(ElectionResult),
+    ConnectionDetails(ConnectionDetails),
 }
 
 #[derive(Clone)]
@@ -108,7 +115,10 @@ impl Election {
             }
             Message::ElectionResult(ElectionResult { addr, hid }) => {
                 println!("{}, hid={} elected master by {}", addr, hid, source);
-            }
+            },
+            Message::ConnectionDetails(details) => {
+                panic!("this needs to be accounted for");
+            },
         }
         Ok(())
     }

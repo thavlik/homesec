@@ -107,11 +107,12 @@ fn listen_for_existing_master(socket: &mut UdpSocket, wait_period: Duration) -> 
 }
 
 fn run_master(socket: &mut UdpSocket, hid: Uuid, broadcast_addr: &str) -> Result<()> {
+    // TODO: start k8s master
+    let token = format!("TODO");
     loop {
-        let msg = Message::Appearance(AppearanceMessage {
-            priority: -1,
+        let msg = Message::ConnectionDetails(ConnectionDetails {
             hid,
-            is_master: true,
+            token: token.clone(),
         });
         let encoded: Vec<u8> = bincode::serialize(&msg)?;
         socket.send_to(&encoded[..], &broadcast_addr)?;
@@ -120,7 +121,8 @@ fn run_master(socket: &mut UdpSocket, hid: Uuid, broadcast_addr: &str) -> Result
     Ok(())
 }
 
-fn run_agent(socket: &mut UdpSocket) -> Result<()> {
+fn run_worker(socket: &mut UdpSocket) -> Result<()> {
+    // TODO: start k8s worker
     loop {
         std::thread::sleep(Duration::from_millis(1000));
     }
@@ -145,6 +147,6 @@ fn main() -> Result<()> {
         run_master(&mut socket, hid, &broadcast_addr)
     } else {
         println!("elected {} as master, hid={}", master_addr, master_hid);
-        run_agent(&mut socket)
+        run_worker(&mut socket)
     }
 }
