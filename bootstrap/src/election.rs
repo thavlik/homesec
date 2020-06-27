@@ -115,7 +115,7 @@ impl Election {
     pub fn check_vote(&mut self) -> Option<SocketAddr> {
         if self.voted {
             None
-        } else if let Some(node) = self.nodes().iter().find(|node| node.is_master) {
+        } else if let Some(node) = self.nodes.iter().find(|node| node.is_master) {
             // Always prefer existing master
             self.voted = true;
             Some(node.addr)

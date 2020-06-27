@@ -46,7 +46,7 @@ fn elect_leader(is_master: bool) -> Result<SocketAddr> {
         }
         match d.check_result() {
             (Some(leader), false) => {
-                let msg = Message::LeaderElected(LeaderElected {
+                let msg = Message::ElectionResult(ElectionResult {
                     addr: leader,
                 });
                 let encoded: Vec<u8> = bincode::serialize(&msg)?;
