@@ -14,12 +14,12 @@ fn main() -> io::Result<()> {
     let mut socket = UdpSocket::bind(format!("0.0.0.0:{}", port))?;
     socket.set_nonblocking(true)?;
     socket.set_broadcast(true)?;
+    let mut buf = [0; 128];
     loop {
-        let mut buf = [0; 10];
         match socket.recv_from(&mut buf) {
             Ok(n) => {
                 let msg: AppearanceMessage = bincode::deserialize(&buf[..]).expect("deserialize");
-                println!("{:?}", msg);
+                println!("{} bytes, {:?}", buf.len(), msg);
             },
             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
             }
