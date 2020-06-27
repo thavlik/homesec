@@ -26,7 +26,7 @@ fn main() -> io::Result<()> {
         match socket.recv_from(&mut buf) {
             Ok((n, addr)) => {
                 let msg: AppearanceMessage = bincode::deserialize(&buf[..n]).expect("deserialize");
-                println!("{} bytes from {}, {:?}", n, addr, msg);
+                println!("{} {} {:?}", n, addr, msg);
             },
             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
             }
