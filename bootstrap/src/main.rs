@@ -93,7 +93,7 @@ fn main() -> Result<()> {
     socket.set_broadcast(true)?;
     let (leader_addr, leader_hid) = elect_leader(&mut socket, &broadcast_addr, hid, is_master, delay)?;
     if leader_hid == hid {
-        println!("elected master, broadcasting appearance");
+        println!("elected master");
         is_master = true;
         loop {
             let msg = Message::Appearance(AppearanceMessage {
