@@ -95,7 +95,7 @@ fn listen_for_existing_leader(socket: &mut UdpSocket, wait_period: Duration) -> 
                     Message::Appearance(msg) if msg.is_master => {
                         return Ok(Some((addr, msg.hid)));
                     },
-                    _ => return Ok(None),
+                    _ => {},
                 }
             }
             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {}
