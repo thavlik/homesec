@@ -4,7 +4,6 @@ extern crate anyhow;
 use anyhow::{Result};
 use std::io;
 use std::net::{SocketAddr, UdpSocket};
-use rand::prelude::*;
 
 mod election;
 
@@ -34,10 +33,6 @@ fn elect_leader() -> Result<SocketAddr> {
 
     // Send a reset message so the process starts over for all nodes
     socket.send_to(&bincode::serialize(&Message::Reset)?[..], &broadcast_addr)?;
-
-    // Assign a random priority
-    let priority = rand::random();
-    println!("Assigned priority {}", priority);
 
     let mut d = Election::new();
 

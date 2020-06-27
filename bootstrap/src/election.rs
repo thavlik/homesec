@@ -6,6 +6,7 @@ use std::cmp::Ordering;
 use std::collections::HashSet;
 use std::ops::Sub;
 use std::alloc::System;
+use rand::prelude::*;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AppearanceMessage {
@@ -65,6 +66,7 @@ pub struct Election {
     pub last_vote: SystemTime,
     pub voted: bool,
     pub delay: Duration,
+    pub priority: i32,
 }
 
 impl Election {
@@ -75,6 +77,7 @@ impl Election {
             last_vote: SystemTime::now(),
             voted: false,
             delay: Duration::from_secs(10),
+            priority: rand::random(),
         }
     }
 
@@ -168,5 +171,6 @@ impl Election {
         self.nodes.clear();
         self.start_time = SystemTime::now();
         self.voted = false;
+        self.priority = rand::random();
     }
 }
