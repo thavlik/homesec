@@ -86,6 +86,7 @@ fn elect_leader(hid: Uuid, is_master: bool) -> Result<SocketAddr> {
 
 fn main() -> Result<()> {
     let hid = get_hid()?;
+    println!("hid={}", hid);
     println!("electing leader");
     let leader = elect_leader(hid, false)?;
     println!("elected {}", leader);
