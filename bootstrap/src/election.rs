@@ -69,6 +69,8 @@ impl Election {
         nodes.sort_by(|a, b| {
             if a.votes < b.votes {
                 Ordering::Less
+            } else if a.votes == b.votes {
+                Ordering::Equal
             } else {
                 Ordering::Greater
             }
