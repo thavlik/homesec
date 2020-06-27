@@ -1,3 +1,7 @@
+#[macro_use]
+extern crate anyhow;
+
+use anyhow::{Result, Error};
 use std::io;
 use std::net::UdpSocket;
 use serde::{Serialize, Deserialize};
@@ -7,20 +11,23 @@ struct AppearanceMessage {
     is_master: bool,
 }
 
-fn get_port() -> io::Result<i32> {
+fn get_port() -> Result<i32> {
+    if let Ok(value) = std::env::var("PORT") {
+         value.parse::<i32>()?;
+    }
     return Ok(43000);
 }
 
-fn get_broadcast_address(port: i32) -> io::Result<String> {
+fn get_broadcast_address(port: i32) -> Result<String> {
     Ok(format!("192.168.0.255:{}", port))
 }
 
-fn handle_appearance(addr: std::net::SocketAddr, msg: &AppearanceMessage) -> io::Result<()> {
+fn handle_appearance(addr: std::net::SocketAddr, msg: &AppearanceMessage) -> Result<()> {
     println!("{} {:?}", addr, msg);
     Ok(())
 }
 
-fn main() -> io::Result<()> {
+fn main() -> Result<()> {
     let port = get_port()?;
     let broadcast_addr = get_broadcast_address(port)?;
     let mut socket = UdpSocket::bind(format!("0.0.0.0:{}", port))?;
