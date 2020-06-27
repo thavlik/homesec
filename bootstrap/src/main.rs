@@ -30,9 +30,10 @@ fn get_hid() -> Result<Uuid> {
     Ok(std::fs::read_to_string("/etc/hid")?.trim().parse()?)
 }
 
-fn elect_master(socket: &mut UdpSocket, broadcast_addr: &str, hid: Uuid, is_master: bool, delay: Duration) -> Result<(SocketAddr, Uuid)> {
+fn elect_master(socket: &mut UdpSocket, broadcast_addr: &str, hid: Uuid, is_master: bool) -> Result<(SocketAddr, Uuid)> {
     let mut d = Election::new();
     let mut buf = [0; 128];
+    let delay = Duration::from_secs(1);
     loop {
         match socket.recv_from(&mut buf) {
             Ok((n, addr)) => {
@@ -94,8 +95,8 @@ fn listen_for_existing_master(socket: &mut UdpSocket, wait_period: Duration) -> 
                 match msg {
                     Message::Appearance(msg) if msg.is_master => {
                         return Ok(Some((addr, msg.hid)));
-                    },
-                    _ => {},
+                    }
+                    _ => {}
                 }
             }
             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {}
@@ -105,12 +106,32 @@ fn listen_for_existing_master(socket: &mut UdpSocket, wait_period: Duration) -> 
     }
 }
 
+fn run_master(socket: &mut UdpSocket, hid: Uuid, broadcast_addr: &str) -> Result<()> {
+    loop {
+        let msg = Message::Appearance(AppearanceMessage {
+            priority: -1,
+            hid,
+            is_master: true,
+        });
+        let encoded: Vec<u8> = bincode::serialize(&msg)?;
+        socket.send_to(&encoded[..], &broadcast_addr)?;
+        std::thread::sleep(Duration::from_millis(1000));
+    }
+    Ok(())
+}
+
+fn run_agent(socket: &mut UdpSocket) -> Result<()> {
+    loop {
+        std::thread::sleep(Duration::from_millis(1000));
+    }
+    Ok(())
+}
+
 fn main() -> Result<()> {
     let hid = get_hid()?;
     let mut is_master = false;
     println!("hid={}", hid);
     println!("electing master");
-    let delay = Duration::from_millis(1000);
     let port = get_port()?;
     let broadcast_addr = get_broadcast_address(port)?;
     let mut socket = UdpSocket::bind(format!("0.0.0.0:{}", port))?;
@@ -118,22 +139,12 @@ fn main() -> Result<()> {
     socket.set_broadcast(true)?;
     let wait_period = Duration::from_secs(5);
     let (master_addr, master_hid) = listen_for_existing_master(&mut socket, wait_period)?
-        .unwrap_or(elect_master(&mut socket, &broadcast_addr, hid, is_master, delay)?);
+        .unwrap_or(elect_master(&mut socket, &broadcast_addr, hid, is_master)?);
     if master_hid == hid {
         println!("elected master");
-        is_master = true;
-        loop {
-            let msg = Message::Appearance(AppearanceMessage {
-                priority: -1,
-                hid,
-                is_master,
-            });
-            let encoded: Vec<u8> = bincode::serialize(&msg)?;
-            socket.send_to(&encoded[..], &broadcast_addr)?;
-            std::thread::sleep(delay);
-        }
+        run_master(&mut socket, hid, &broadcast_addr)
     } else {
-        println!("elected {} as master, hid={}", master_addr, master_hid)
+        println!("elected {} as master, hid={}", master_addr, master_hid);
+        run_agent(&mut socket)
     }
-    Ok(())
 }
