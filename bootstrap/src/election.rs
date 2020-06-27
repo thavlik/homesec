@@ -116,11 +116,11 @@ impl Election {
         let acc = (nodes[0].addr, nodes[0].votes.len());
         let (addr, winning_vote_count) = nodes[1..]
             .iter()
-            .fold(acc, |v, node| {
-                if node.votes.len() > v.1 {
+            .fold(acc, |acc, node| {
+                if node.votes.len() > acc.1 {
                     (node.addr, node.votes.len())
                 } else {
-                    v
+                    acc
                 }
             });
         if nodes.iter().filter(|node| node.votes.len() == winning_vote_count).count() > 1 {
