@@ -13,7 +13,7 @@ struct AppearanceMessage {
 
 fn get_port() -> Result<i32> {
     if let Ok(port) = std::env::var("PORT") {
-        return port.parse::<i32>();
+        return Ok(port.parse::<i32>()?);
     }
     return Ok(43000);
 }
