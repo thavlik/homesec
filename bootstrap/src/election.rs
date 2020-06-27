@@ -35,6 +35,7 @@ pub enum Message {
 #[derive(Clone)]
 pub struct Node {
     pub addr: SocketAddr,
+    pub is_master: bool,
     pub priority: i32,
     pub last_seen: SystemTime,
     pub votes: HashSet<SocketAddr>,
@@ -44,6 +45,7 @@ impl Node {
     fn from_appearance(addr: SocketAddr, msg: &AppearanceMessage) -> Self {
         Self {
             addr,
+            is_master: msg.is_master,
             priority: msg.priority,
             last_seen: SystemTime::now(),
             votes: HashSet::new(),
@@ -52,6 +54,7 @@ impl Node {
 
     fn process_appearance(&mut self, msg: &AppearanceMessage) -> Result<()> {
         self.priority = msg.priority;
+        self.is_master = msg.is_master;
         self.last_seen = SystemTime::now();
         Ok(())
     }
@@ -110,7 +113,13 @@ impl Election {
     }
 
     pub fn check_vote(&mut self) -> Option<SocketAddr> {
-        if self.voted || self.nodes.is_empty() || self.too_early() {
+        if self.voted {
+            None
+        } else if let Some(node) = self.nodes().iter().find(|node| node.is_master) {
+            // Always prefer existing master
+            self.voted = true;
+            Some(node.addr)
+        } else if self.nodes.is_empty() || self.too_early() {
             None
         } else {
             let mut nodes = self.nodes.clone();
