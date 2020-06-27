@@ -9,7 +9,6 @@ use std::alloc::System;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AppearanceMessage {
-    pub is_master: bool,
     pub priority: i32,
 }
 
@@ -28,7 +27,6 @@ pub enum Message {
 #[derive(Clone)]
 pub struct Node {
     pub addr: SocketAddr,
-    pub is_master: bool,
     pub priority: i32,
     pub last_seen: SystemTime,
     pub votes: HashSet<SocketAddr>,
@@ -38,7 +36,6 @@ impl Node {
     fn from_appearance(addr: SocketAddr, msg: &AppearanceMessage) -> Self {
         Self {
             addr,
-            is_master: msg.is_master,
             priority: msg.priority,
             last_seen: SystemTime::now(),
             votes: HashSet::new(),
@@ -46,7 +43,6 @@ impl Node {
     }
 
     fn process_appearance(&mut self, msg: &AppearanceMessage) -> Result<()> {
-        self.is_master = msg.is_master;
         self.priority = msg.priority;
         self.last_seen = SystemTime::now();
         Ok(())
@@ -60,6 +56,7 @@ impl Node {
 pub struct Election {
     pub nodes: Vec<Node>,
     pub start_time: SystemTime,
+    pub last_vote: SystemTime,
     pub voted: bool,
     pub delay: Duration,
 }
@@ -69,6 +66,7 @@ impl Election {
         Self {
             nodes: Vec::new(),
             start_time: SystemTime::now(),
+            last_vote: SystemTime::now(),
             voted: false,
             delay: Duration::from_secs(10),
         }
@@ -98,7 +96,11 @@ impl Election {
         }
     }
 
-    pub fn check_result(&self) -> Option<SocketAddr> {
+    pub fn check_result(&mut self) -> Option<SocketAddr> {
+        if SystemTime::now().duration_since(self.last_vote).unwrap() < self.delay {
+            // Wait for all the votes to tally
+            return None
+        }
         let quorum = self.quorum();
         let mut nodes = self.nodes.iter()
             .filter(|node| node.votes.len() >= quorum)
@@ -112,6 +114,13 @@ impl Election {
                 Ordering::Greater
             }
         });
+        let winning_vote_count = nodes.iter().last().unwrap().votes.len();
+        if nodes.iter().filter(|node| node.votes.len() == winning_vote_count).count() > 1 {
+            // More than one leader was elected. Do the whole thing over again.
+            println!("More than one leader was elected. Holding new election...");
+            self.reset();
+            return None;
+        }
         if let Some(node) = nodes.iter().last() {
             Some(node.addr)
         } else {
@@ -132,6 +141,7 @@ impl Election {
         match self.nodes.iter_mut().find(|n| n.addr == candidate) {
             Some(node) => {
                 node.cast_vote(voter);
+                self.last_vote = SystemTime::now();
                 println!("Casted vote for {:?}, total_votes={}", candidate, node.votes.len());
                 Ok(())
             }

@@ -37,6 +37,7 @@ fn elect_leader() -> Result<SocketAddr> {
 
     // Assign a random priority
     let priority = rand::random();
+    println!("Assigned priority {}", priority);
 
     let mut d = Election::new();
 
@@ -64,7 +65,6 @@ fn elect_leader() -> Result<SocketAddr> {
         }
         // Send an appearance message
         let msg = Message::Appearance(AppearanceMessage {
-            is_master: false,
             priority,
         });
         let encoded: Vec<u8> = bincode::serialize(&msg)?;
