@@ -28,7 +28,7 @@ fn get_addresses() -> Result<Vec<String>> {
 fn install_bootstrap(addresses: &[String]) -> Result<()> {
     for address in addresses {
         println!("installing to {}", address);
-        let dest = format!("pi@{}:/home/pi/homesec-bootstrap", address);
+        let dest = format!("pi@{}:/tmp/homesec-bootstrap", address);
         let output = Command::new("scp")
             .args(&["../target/armv7-unknown-linux-gnueabihf/debug/homesec-bootstrap", &dest])
             .current_dir("../bootstrap")
@@ -44,7 +44,7 @@ fn install_bootstrap(addresses: &[String]) -> Result<()> {
                 &format!("pi@{}", address),
                 "sudo",
                 "mv",
-                "/home/pi/homesec-bootstrap",
+                "/tmp/homesec-bootstrap",
                 "/usr/bin/homesec-bootstrap",
             ])
             .output()
