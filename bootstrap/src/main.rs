@@ -15,17 +15,18 @@ fn get_port() -> Result<i32> {
     return Ok(43000);
 }
 
-fn get_broadcast_address(port: i32) -> Result<String> {
-    // TODO: probe eth0
-    if let Ok(broadcast_addr) = std::env::var("BROADCAST_ADDR") {
-        return Ok(broadcast_addr);
-    }
-    Ok(format!("192.168.0.255:{}", port))
+fn get_addresses(port: i32) -> Result<(SocketAddr, SocketAddr)> {
+    let broadcast_addr = if let Ok(broadcast_addr) = std::env::var("BROADCAST_ADDR") {
+        broadcast_addr.parse()?
+    } else {
+        format!("192.168.0.255:{}", port).parse()?
+    };
+    Ok((broadcast_addr, broadcast_addr))
 }
 
 fn elect_leader() -> Result<SocketAddr> {
     let port = get_port()?;
-    let broadcast_addr = get_broadcast_address(port)?;
+    let (self_addr, broadcast_addr) = get_addresses(port)?;
     let mut socket = UdpSocket::bind(format!("0.0.0.0:{}", port))?;
     socket.set_nonblocking(true)?;
     socket.set_broadcast(true)?;
