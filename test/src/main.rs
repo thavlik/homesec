@@ -7,8 +7,11 @@ use std::process::Command;
 use std::io::{self, Write};
 
 fn build_for_arm() -> Result<()> {
-    let output = Command::new("cargo")
-        .args(&["build", "--target", "armv7-unknown-linux-gnueabihf"])
+    let output = Command::new("sh")
+        .args(&[
+            "-c",
+            "rm ../target/armv7-unknown-linux-gnueabihf/debug/homesec-bootstrap || true && cargo build --target armv7-unknown-linux-gnueabihf",
+        ])
         .current_dir("../bootstrap")
         .output()
         .expect("build failed");
@@ -40,13 +43,15 @@ fn install_bootstrap(addresses: &[String]) -> Result<()> {
             std::io::stderr().write_all(&output.stderr).unwrap();
             return Err(anyhow!("command failed with exit code {}", output.status));
         }
-        let command = base64::encode("rm /usr/bin/homesec-bootstrap && mv /home/pi/homesec-bootstrap /usr/bin/homesec-bootstrap && systemctl restart homesec-bootstrap.service");
+        // TODO: return error from script
+        let encoded = base64::encode("set -e; rm /usr/bin/homesec-bootstrap || true && mv /home/pi/homesec-bootstrap /usr/bin/homesec-bootstrap && systemctl restart homesec-bootstrap.service");
+        //let encoded = base64::encode("exit 1");
         let output = Command::new("ssh")
             .args(&[
                 &format!("pi@{}", &address),
-                "sh",
+                "bash",
                 "-c",
-                &format!("echo {} | base64 --decode | sudo sh", command),
+                &format!("set -e; echo \"{}\" | base64 --decode | sudo bash -", &encoded),
             ])
             .output()
             .expect("mv failed");
