@@ -32,7 +32,7 @@ fn get_addresses() -> Result<Vec<String>> {
 fn install_bootstrap(addresses: &[String]) -> Result<()> {
     for address in addresses {
         println!("installing to {}", address);
-        let dest = format!("pi@{}:/home/pi/homesec-bootstrap", address);
+        let dest = format!("pi@{}:/tmp/homesec-bootstrap", address);
         let output = Command::new("scp")
             .args(&["../target/armv7-unknown-linux-gnueabihf/debug/homesec-bootstrap", &dest])
             .current_dir("../bootstrap")
@@ -44,7 +44,7 @@ fn install_bootstrap(addresses: &[String]) -> Result<()> {
             return Err(anyhow!("command failed with exit code {}", output.status));
         }
         // TODO: return error from script
-        let encoded = base64::encode("set -e; rm /usr/bin/homesec-bootstrap || true && mv /home/pi/homesec-bootstrap /usr/bin/homesec-bootstrap && systemctl restart homesec-bootstrap.service");
+        let encoded = base64::encode("set -e; rm /usr/bin/homesec-bootstrap || true && mv /tmp/homesec-bootstrap /usr/bin/homesec-bootstrap && systemctl restart homesec-bootstrap.service");
         //let encoded = base64::encode("exit 1");
         let output = Command::new("ssh")
             .args(&[
