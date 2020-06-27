@@ -1,10 +1,10 @@
 #[macro_use]
 extern crate anyhow;
 
-use anyhow::{Result};
+use anyhow::{Result, Error};
 use std::io;
 use std::net::{SocketAddr, UdpSocket};
-use std::time::Duration;
+use std::time::{Duration, SystemTime};
 use uuid::Uuid;
 
 mod election;
@@ -79,6 +79,32 @@ fn elect_leader(socket: &mut UdpSocket, broadcast_addr: &str, hid: Uuid, is_mast
     }
 }
 
+fn listen_for_existing_leader(socket: &mut UdpSocket, wait_period: Duration) -> Result<Option<(SocketAddr, Uuid)>> {
+    let start = SystemTime::now();
+    let delay = Duration::from_secs(1);
+    let mut buf = [0; 128];
+    loop {
+        let elapsed = SystemTime::now().duration_since(start).unwrap();
+        if elapsed > wait_period {
+            return Ok(None);
+        }
+        match socket.recv_from(&mut buf) {
+            Ok((n, addr)) => {
+                let msg: Message = bincode::deserialize(&buf[..n])?;
+                match msg {
+                    Message::Appearance(msg) if msg.is_master => {
+                        return Ok(Some((addr, msg.hid)));
+                    },
+                    _ => return Ok(None),
+                }
+            }
+            Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {}
+            Err(e) => return Err(Error::from(e)),
+        }
+        std::thread::sleep(delay);
+    }
+}
+
 fn main() -> Result<()> {
     let hid = get_hid()?;
     let mut is_master = false;
@@ -90,8 +116,10 @@ fn main() -> Result<()> {
     let mut socket = UdpSocket::bind(format!("0.0.0.0:{}", port))?;
     socket.set_nonblocking(true)?;
     socket.set_broadcast(true)?;
-    let (leader_addr, leader_hid) = elect_leader(&mut socket, &broadcast_addr, hid, is_master, delay)?;
-    if leader_hid == hid {
+    let wait_period = Duration::from_secs(5);
+    let (master_addr, master_hid) = listen_for_existing_leader(&mut socket, wait_period)?
+        .unwrap_or(elect_leader(&mut socket, &broadcast_addr, hid, is_master, delay)?);
+    if master_hid == hid {
         println!("elected master");
         is_master = true;
         loop {
@@ -105,7 +133,7 @@ fn main() -> Result<()> {
             std::thread::sleep(delay);
         }
     } else {
-        println!("elected {}, hid={}", leader_addr, leader_hid);
+        println!("elected {} as master, hid={}", master_addr, master_hid)
     }
     Ok(())
 }
