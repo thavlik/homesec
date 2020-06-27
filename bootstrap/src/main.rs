@@ -52,12 +52,12 @@ fn elect_leader(socket: &mut UdpSocket, broadcast_addr: &str, hid: Uuid, is_mast
                 let encoded: Vec<u8> = bincode::serialize(&msg)?;
                 socket.send_to(&encoded[..], &broadcast_addr)?;
                 return Ok((addr, hid));
-            },
+            }
             (None, true) => {
                 let encoded: Vec<u8> = bincode::serialize(&Message::Reset)?;
                 socket.send_to(&encoded[..], &broadcast_addr)?;
-            },
-            (None, false) => {},
+            }
+            (None, false) => {}
             _ => unreachable!(),
         }
         if let Some((addr, hid)) = d.check_vote() {
@@ -85,17 +85,15 @@ fn main() -> Result<()> {
     let mut is_master = false;
     println!("hid={}", hid);
     println!("electing leader");
-    let delay = Duration::from_secs(1);
-
+    let delay = Duration::from_millis(1000);
     let port = get_port()?;
     let broadcast_addr = get_broadcast_address(port)?;
     let mut socket = UdpSocket::bind(format!("0.0.0.0:{}", port))?;
     socket.set_nonblocking(true)?;
     socket.set_broadcast(true)?;
-
-    let (leader_addr, leader_hid) = elect_leader(&mut socket, &broadcast_addr,hid, is_master, delay)?;
-    println!("elected {}, hid={}", leader_addr, leader_hid);
+    let (leader_addr, leader_hid) = elect_leader(&mut socket, &broadcast_addr, hid, is_master, delay)?;
     if leader_hid == hid {
+        println!("elected master, broadcasting appearance");
         is_master = true;
         loop {
             let msg = Message::Appearance(AppearanceMessage {
@@ -105,8 +103,11 @@ fn main() -> Result<()> {
             });
             let encoded: Vec<u8> = bincode::serialize(&msg)?;
             socket.send_to(&encoded[..], &broadcast_addr)?;
+            println!("sent");
             std::thread::sleep(delay);
         }
+    } else {
+        println!("elected {}, hid={}", leader_addr, leader_hid);
     }
     Ok(())
 }

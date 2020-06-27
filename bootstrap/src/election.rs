@@ -93,7 +93,7 @@ impl Election {
             start_time: SystemTime::now(),
             last_vote: SystemTime::now(),
             voted: false,
-            delay: Duration::from_secs(10),
+            delay: Duration::from_secs(5),
             priority: gen_priority(),
         }
     }
