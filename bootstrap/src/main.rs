@@ -9,6 +9,7 @@ use serde::{Serialize, Deserialize};
 #[derive(Serialize, Deserialize, Debug)]
 struct AppearanceMessage {
     is_master: bool,
+    priority: u8,
 }
 
 fn get_port() -> Result<i32> {
@@ -19,6 +20,9 @@ fn get_port() -> Result<i32> {
 }
 
 fn get_broadcast_address(port: i32) -> Result<String> {
+    if let Ok(broadcast_addr) = std::env::var("BROADCAST_ADDR") {
+        return Ok(broadcast_addr);
+    }
     Ok(format!("192.168.0.255:{}", port))
 }
 
@@ -46,6 +50,7 @@ fn main() -> Result<()> {
         }
         let msg = AppearanceMessage{
             is_master: false,
+            priority: 0,
         };
         let encoded: Vec<u8> = bincode::serialize(&msg).expect("serialize");
         socket.send_to(&encoded[..], &broadcast_addr)?;
