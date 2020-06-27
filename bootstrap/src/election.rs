@@ -11,6 +11,7 @@ use rand::prelude::*;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AppearanceMessage {
     pub priority: i32,
+    pub is_master: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -19,7 +20,7 @@ pub struct CastVote {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct LeaderElected {
+pub struct ElectionResult {
     pub addr: SocketAddr,
 }
 
@@ -28,7 +29,7 @@ pub enum Message {
     Appearance(AppearanceMessage),
     CastVote(CastVote),
     Reset,
-    LeaderElected(LeaderElected),
+    ElectionResult(ElectionResult),
 }
 
 #[derive(Clone)]
@@ -85,8 +86,6 @@ impl Election {
         }
     }
 
-
-
     pub fn process_message(&mut self, source: SocketAddr, msg: &Message) -> Result<()> {
         match msg {
             Message::Appearance(msg) => self.handle_appearance(source, &msg)?,
@@ -94,10 +93,10 @@ impl Election {
             Message::Reset => {
                 println!("resetting election");
                 self.reset()
-            },
-            Message::LeaderElected(LeaderElected { addr }) => {
+            }
+            Message::ElectionResult(ElectionResult { addr }) => {
                 println!("{} elected leader by {}", addr, source);
-            },
+            }
         }
         Ok(())
     }

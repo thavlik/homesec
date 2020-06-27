@@ -24,7 +24,7 @@ fn get_broadcast_address(port: i32) -> Result<String> {
     Ok(format!("192.168.0.255:{}", port))
 }
 
-fn elect_leader() -> Result<SocketAddr> {
+fn elect_leader(is_master: bool) -> Result<SocketAddr> {
     let port = get_port()?;
     let broadcast_addr = get_broadcast_address(port)?;
     let mut socket = UdpSocket::bind(format!("0.0.0.0:{}", port))?;
@@ -70,6 +70,7 @@ fn elect_leader() -> Result<SocketAddr> {
         // Send an appearance message
         let msg = Message::Appearance(AppearanceMessage {
             priority: d.priority,
+            is_master,
         });
         let encoded: Vec<u8> = bincode::serialize(&msg)?;
         socket.send_to(&encoded[..], &broadcast_addr)?;
@@ -79,7 +80,7 @@ fn elect_leader() -> Result<SocketAddr> {
 
 fn main() -> Result<()> {
     println!("electing leader");
-    let leader = elect_leader()?;
+    let leader = elect_leader(false)?;
     println!("elected {}", leader);
     loop {
         std::thread::sleep(std::time::Duration::from_secs(1));
