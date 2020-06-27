@@ -113,27 +113,26 @@ impl Election {
             // No quorum has yet been made
             return None;
         }
-        nodes.sort_by(|a, b| {
-            if a.votes.len() < b.votes.len() {
-                Ordering::Less
-            } else if a.votes == b.votes {
-                Ordering::Equal
-            } else {
-                Ordering::Greater
-            }
-        });
-        let winning_vote_count = nodes.iter().last().unwrap().votes.len();
+        let (addr, winning_vote_count) = nodes
+            .iter()
+            .fold((None, 0), |v, node| {
+                if node.votes.len() > v.1 {
+                    (Some(node.addr), node.votes.len())
+                } else {
+                    v
+                }
+            });
+        if winning_vote_count == 0 {
+            // Sanity check
+            return None;
+        }
         if nodes.iter().filter(|node| node.votes.len() == winning_vote_count).count() > 1 {
             // More than one leader was elected. Do the whole thing over again.
             println!("More than one leader was elected. Holding new election...");
             self.reset();
             return None;
         }
-        if let Some(node) = nodes.iter().last() {
-            Some(node.addr)
-        } else {
-            None
-        }
+        Some(addr.unwrap())
     }
 
     pub fn handle_appearance(&mut self, addr: SocketAddr, msg: &AppearanceMessage) -> Result<()> {
