@@ -6,14 +6,6 @@ struct AppearanceMessage {
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
-    //let mut socket = UdpSocket::bind("0.0.0.0:34254")?;
-    //tokio::spawn(async move {
-    //    loop {
-    //        let mut buf = [0; 10];
-    //        let (amt, src) = socket.recv_from(&mut buf)?;
-    //        println!("Received packet");
-    //    }
-    //});
     let mut socket = UdpSocket::bind("0.0.0.0:43000")?;
     socket.set_nonblocking(true)?;
     loop {
