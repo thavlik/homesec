@@ -607,7 +607,8 @@ dependencies = [
 name = "homesec-bootstrap"
 version = "0.1.0"
 dependencies = [
- "tokio",
+ "bincode",
+ "serde",
 ]
 
 [[package]]
