@@ -105,6 +105,9 @@ impl Election {
         let mut nodes = self.nodes.iter()
             .filter(|node| node.votes.len() >= quorum)
             .collect::<Vec<_>>();
+        if nodes.is_empty() {
+            return None;
+        }
         nodes.sort_by(|a, b| {
             if a.votes.len() < b.votes.len() {
                 Ordering::Less
@@ -152,5 +155,6 @@ impl Election {
     pub fn reset(&mut self) {
         self.nodes.clear();
         self.start_time = SystemTime::now();
+        self.voted = false;
     }
 }
