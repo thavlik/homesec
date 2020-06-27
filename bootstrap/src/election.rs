@@ -107,7 +107,7 @@ impl Election {
                 self.reset()
             }
             Message::ElectionResult(ElectionResult { addr, hid }) => {
-                println!("{}, hid={} elected leader by {}", addr, hid, source);
+                println!("{}, hid={} elected master by {}", addr, hid, source);
             }
         }
         Ok(())
@@ -165,8 +165,7 @@ impl Election {
         if nodes.iter().filter(|node| {
             node.votes.len() == winning_vote_count
         }).count() > 1 {
-            // More than one leader was elected. Do the whole thing over again.
-            println!("More than one leader was elected. Holding new election...");
+            println!("More than one master was elected. Holding new election...");
             self.reset();
             return (None, true);
         }

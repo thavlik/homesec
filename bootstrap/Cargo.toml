@@ -1,10 +1,9 @@
 [package]
-name = "homesec-bootstrap"
+name = "homesec_bootstrap"
 version = "0.1.0"
 authors = ["Tom Havlik <thavlik@protonmail.com>"]
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+workspace = ".."
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
@@ -12,4 +11,3 @@ bincode = { git = "https://github.com/servo/bincode.git" }
 anyhow = "1.0.12"
 rand = "0.7.3"
 uuid = { version = "0.8.1", features = ["serde"] }
-

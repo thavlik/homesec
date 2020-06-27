@@ -563,7 +563,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "homesec-bootstrap"
+name = "homesec-ds18b20"
+version = "0.1.0"
+
+[[package]]
+name = "homesec_bootstrap"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -574,15 +578,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "homesec-ds18b20"
-version = "0.1.0"
-
-[[package]]
-name = "homesec-test"
+name = "homesec_test"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "base64 0.12.3",
+ "bincode",
+ "homesec_bootstrap",
  "log",
 ]
 

@@ -30,7 +30,7 @@ fn get_hid() -> Result<Uuid> {
     Ok(std::fs::read_to_string("/etc/hid")?.trim().parse()?)
 }
 
-fn elect_leader(socket: &mut UdpSocket, broadcast_addr: &str, hid: Uuid, is_master: bool, delay: Duration) -> Result<(SocketAddr, Uuid)> {
+fn elect_master(socket: &mut UdpSocket, broadcast_addr: &str, hid: Uuid, is_master: bool, delay: Duration) -> Result<(SocketAddr, Uuid)> {
     let mut d = Election::new();
     let mut buf = [0; 128];
     loop {
@@ -79,7 +79,7 @@ fn elect_leader(socket: &mut UdpSocket, broadcast_addr: &str, hid: Uuid, is_mast
     }
 }
 
-fn listen_for_existing_leader(socket: &mut UdpSocket, wait_period: Duration) -> Result<Option<(SocketAddr, Uuid)>> {
+fn listen_for_existing_master(socket: &mut UdpSocket, wait_period: Duration) -> Result<Option<(SocketAddr, Uuid)>> {
     let start = SystemTime::now();
     let delay = Duration::from_secs(1);
     let mut buf = [0; 128];
@@ -109,7 +109,7 @@ fn main() -> Result<()> {
     let hid = get_hid()?;
     let mut is_master = false;
     println!("hid={}", hid);
-    println!("electing leader");
+    println!("electing master");
     let delay = Duration::from_millis(1000);
     let port = get_port()?;
     let broadcast_addr = get_broadcast_address(port)?;
@@ -117,8 +117,8 @@ fn main() -> Result<()> {
     socket.set_nonblocking(true)?;
     socket.set_broadcast(true)?;
     let wait_period = Duration::from_secs(5);
-    let (master_addr, master_hid) = listen_for_existing_leader(&mut socket, wait_period)?
-        .unwrap_or(elect_leader(&mut socket, &broadcast_addr, hid, is_master, delay)?);
+    let (master_addr, master_hid) = listen_for_existing_master(&mut socket, wait_period)?
+        .unwrap_or(elect_master(&mut socket, &broadcast_addr, hid, is_master, delay)?);
     if master_hid == hid {
         println!("elected master");
         is_master = true;

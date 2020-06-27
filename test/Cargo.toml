@@ -1,5 +1,5 @@
 [package]
-name = "homesec-test"
+name = "homesec_test"
 version = "0.1.0"
 authors = ["Tom Havlik <thavlik@protonmail.com>"]
 edition = "2018"
@@ -8,7 +8,8 @@ workspace = ".."
 [dependencies]
 anyhow = "1.0.12"
 base64 = "0.12.3"
-
+homesec_bootstrap = { path = "../bootstrap" }
+bincode = { git = "https://github.com/servo/bincode.git" }
 
 [dependencies.log]
 features = ["std"]
