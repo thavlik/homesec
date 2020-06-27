@@ -7,11 +7,13 @@ use std::collections::HashSet;
 use std::ops::Sub;
 use std::alloc::System;
 use rand::prelude::*;
+use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AppearanceMessage {
     pub priority: i32,
     pub is_master: bool,
+    pub hid: Uuid,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -35,6 +37,7 @@ pub enum Message {
 #[derive(Clone)]
 pub struct Node {
     pub addr: SocketAddr,
+    pub hid: Uuid,
     pub is_master: bool,
     pub priority: i32,
     pub last_seen: SystemTime,
@@ -45,6 +48,7 @@ impl Node {
     fn from_appearance(addr: SocketAddr, msg: &AppearanceMessage) -> Self {
         Self {
             addr,
+            hid: msg.hid,
             is_master: msg.is_master,
             priority: msg.priority,
             last_seen: SystemTime::now(),
@@ -53,6 +57,9 @@ impl Node {
     }
 
     fn process_appearance(&mut self, msg: &AppearanceMessage) -> Result<()> {
+        if self.hid != msg.hid {
+            return Err(anyhow!("detected address change for {}", msg.hid));
+        }
         self.priority = msg.priority;
         self.is_master = msg.is_master;
         self.last_seen = SystemTime::now();

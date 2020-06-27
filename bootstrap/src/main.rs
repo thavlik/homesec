@@ -4,6 +4,7 @@ extern crate anyhow;
 use anyhow::{Result};
 use std::io;
 use std::net::{SocketAddr, UdpSocket};
+use uuid::Uuid;
 
 mod election;
 
@@ -24,7 +25,11 @@ fn get_broadcast_address(port: i32) -> Result<String> {
     Ok(format!("192.168.0.255:{}", port))
 }
 
-fn elect_leader(is_master: bool) -> Result<SocketAddr> {
+fn get_hid() -> Result<Uuid> {
+    Ok(std::fs::read_to_string("/etc/hid")?.trim().parse()?)
+}
+
+fn elect_leader(hid: Uuid, is_master: bool) -> Result<SocketAddr> {
     let port = get_port()?;
     let broadcast_addr = get_broadcast_address(port)?;
     let mut socket = UdpSocket::bind(format!("0.0.0.0:{}", port))?;
@@ -70,6 +75,7 @@ fn elect_leader(is_master: bool) -> Result<SocketAddr> {
         // Send an appearance message
         let msg = Message::Appearance(AppearanceMessage {
             priority: d.priority,
+            hid,
             is_master,
         });
         let encoded: Vec<u8> = bincode::serialize(&msg)?;
@@ -79,8 +85,9 @@ fn elect_leader(is_master: bool) -> Result<SocketAddr> {
 }
 
 fn main() -> Result<()> {
+    let hid = get_hid()?;
     println!("electing leader");
-    let leader = elect_leader(false)?;
+    let leader = elect_leader(hid, false)?;
     println!("elected {}", leader);
     loop {
         std::thread::sleep(std::time::Duration::from_secs(1));
