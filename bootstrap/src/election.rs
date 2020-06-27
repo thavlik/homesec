@@ -78,12 +78,14 @@ impl Election {
         }
     }
 
-    pub fn process_message(&mut self, addr: SocketAddr, msg: &Message) -> Result<()> {
+    pub fn process_message(&mut self, source: SocketAddr, msg: &Message) -> Result<()> {
         match msg {
-            Message::Appearance(msg) => self.handle_appearance(addr, &msg)?,
-            Message::CastVote(CastVote { candidate }) => self.cast_vote(*candidate, addr)?,
+            Message::Appearance(msg) => self.handle_appearance(source, &msg)?,
+            Message::CastVote(CastVote { candidate }) => self.cast_vote(*candidate, source)?,
             Message::Reset => self.reset(),
-            Message::LeaderElected(LeaderElected { addr }) => self.reset(),
+            Message::LeaderElected(LeaderElected { addr }) => {
+                println!("{} elected leader by {}", addr, source);
+            },
         }
         Ok(())
     }
