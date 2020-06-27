@@ -1,9 +1,11 @@
 use std::net::SocketAddr;
-use std::time::SystemTime;
+use std::time::{Duration, SystemTime};
 use anyhow::{Result};
 use serde::{Serialize, Deserialize};
 use std::cmp::Ordering;
 use std::collections::HashSet;
+use std::ops::Sub;
+use std::alloc::System;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AppearanceMessage {
@@ -57,12 +59,18 @@ impl Node {
 
 pub struct Election {
     pub nodes: Vec<Node>,
+    pub start_time: SystemTime,
+    pub voted: bool,
+    pub delay: Duration,
 }
 
 impl Election {
     pub fn new() -> Self {
         Self {
             nodes: Vec::new(),
+            start_time: SystemTime::now(),
+            voted: false,
+            delay: Duration::from_secs(10),
         }
     }
 
@@ -77,6 +85,17 @@ impl Election {
 
     fn quorum(&self) -> usize {
         (self.nodes.len() as f64 * 0.666666666666667).ceil() as _
+    }
+
+    pub fn check_vote(&mut self) -> Option<SocketAddr> {
+        if self.voted || self.nodes.is_empty() || SystemTime::now().duration_since(self.start_time).lt(&self.delay) {
+            None
+        } else {
+            let mut nodes = self.nodes.clone();
+            nodes.sort_by_key(|node| node.votes);
+            self.voted = true;
+            Some(nodes.last().unwrap().addr)
+        }
     }
 
     pub fn check_result(&self) -> Option<SocketAddr> {
@@ -122,5 +141,6 @@ impl Election {
 
     pub fn reset(&mut self) {
         self.nodes.clear();
+        self.start_time = SystemTime::now();
     }
 }
