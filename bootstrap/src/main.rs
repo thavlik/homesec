@@ -86,9 +86,10 @@ fn elect_leader(hid: Uuid, is_master: bool) -> Result<SocketAddr> {
 
 fn main() -> Result<()> {
     let hid = get_hid()?;
+    let is_master = false;
     println!("hid={}", hid);
     println!("electing leader");
-    let leader = elect_leader(hid, false)?;
+    let leader = elect_leader(hid, is_master)?;
     println!("elected {}", leader);
     loop {
         std::thread::sleep(std::time::Duration::from_secs(1));
