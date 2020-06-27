@@ -1,5 +1,6 @@
 #[macro_use]
 extern crate anyhow;
+
 use anyhow::Result;
 use std::net::SocketAddr;
 use std::process::Command;
@@ -28,7 +29,7 @@ fn get_addresses() -> Result<Vec<String>> {
 fn install_bootstrap(addresses: &[String]) -> Result<()> {
     for address in addresses {
         println!("installing to {}", address);
-        let dest = format!("pi@{}:/tmp/homesec-bootstrap", address);
+        let dest = format!("pi@{}:/home/pi/homesec-bootstrap", address);
         let output = Command::new("scp")
             .args(&["../target/armv7-unknown-linux-gnueabihf/debug/homesec-bootstrap", &dest])
             .current_dir("../bootstrap")
@@ -39,13 +40,13 @@ fn install_bootstrap(addresses: &[String]) -> Result<()> {
             std::io::stderr().write_all(&output.stderr).unwrap();
             return Err(anyhow!("command failed with exit code {}", output.status));
         }
+        let command = base64::encode("mv /home/pi/homesec-bootstrap /usr/bin/homesec-bootstrap && systemctl restart homesec-bootstrap.service");
         let output = Command::new("ssh")
             .args(&[
-                &format!("pi@{}", address),
-                "sudo",
-                "mv",
-                "/tmp/homesec-bootstrap",
-                "/usr/bin/homesec-bootstrap",
+                &format!("pi@{}", &address),
+                "sh",
+                "-c",
+                &format!("echo {} | base64 --decode | sudo sh", command),
             ])
             .output()
             .expect("mv failed");
