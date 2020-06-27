@@ -20,6 +20,7 @@ fn get_port() -> Result<i32> {
 }
 
 fn get_broadcast_address(port: i32) -> Result<String> {
+    // TODO: probe eth0
     if let Ok(broadcast_addr) = std::env::var("BROADCAST_ADDR") {
         return Ok(broadcast_addr);
     }
