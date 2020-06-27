@@ -26,6 +26,7 @@ pub enum Message {
     Reset,
 }
 
+#[derive(Clone)]
 pub struct Node {
     pub addr: SocketAddr,
     pub is_master: bool,
@@ -88,11 +89,11 @@ impl Election {
     }
 
     pub fn check_vote(&mut self) -> Option<SocketAddr> {
-        if self.voted || self.nodes.is_empty() || SystemTime::now().duration_since(self.start_time).lt(&self.delay) {
+        if self.voted || self.nodes.is_empty() || SystemTime::now().duration_since(self.start_time).unwrap() < self.delay {
             None
         } else {
             let mut nodes = self.nodes.clone();
-            nodes.sort_by_key(|node| node.votes);
+            nodes.sort_by_key(|node| node.votes.len());
             self.voted = true;
             Some(nodes.last().unwrap().addr)
         }
