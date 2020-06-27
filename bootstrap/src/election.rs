@@ -122,10 +122,6 @@ impl Election {
                     v
                 }
             });
-        if winning_vote_count == 0 {
-            // Sanity check
-            return None;
-        }
         if nodes.iter().filter(|node| node.votes.len() == winning_vote_count).count() > 1 {
             // More than one leader was elected. Do the whole thing over again.
             println!("More than one leader was elected. Holding new election...");
