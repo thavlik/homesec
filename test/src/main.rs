@@ -38,16 +38,36 @@ fn install_bootstrap(addresses: &[String]) -> Result<()> {
             std::io::stdout().write_all(&output.stdout).unwrap();
             std::io::stderr().write_all(&output.stderr).unwrap();
             return Err(anyhow!("command failed with exit code {}", output.status));
-        } else {
-            println!("successfully installed bootstrap to {}", address);
         }
+        let output = Command::new("ssh")
+            .args(&[
+                &format!("pi@{}", address),
+                "sudo",
+                "mv",
+                "/home/pi/homesec-bootstrap",
+                "/usr/bin/homesec-bootstrap",
+            ])
+            .output()
+            .expect("mv failed");
+        if !output.status.success() {
+            std::io::stdout().write_all(&output.stdout).unwrap();
+            std::io::stderr().write_all(&output.stderr).unwrap();
+            return Err(anyhow!("command failed with exit code {}", output.status));
+        }
+        println!("successfully installed bootstrap to {}", address);
     }
     Ok(())
 }
 
-fn main() -> Result<()> {
+fn prepare() -> Result<Vec<String>> {
     let addresses = get_addresses()?;
     build_for_arm()?;
     install_bootstrap(&addresses[..])?;
+    Ok(addresses)
+}
+
+fn main() -> Result<()> {
+    let port = 43000;
+    let addresses = prepare()?;
     Ok(())
 }
