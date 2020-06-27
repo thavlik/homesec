@@ -21,6 +21,7 @@ pub struct CastVote {
 pub enum Message {
     Appearance(AppearanceMessage),
     CastVote(CastVote),
+    Reset,
 }
 
 pub struct Node {
@@ -103,10 +104,14 @@ impl Election {
         match self.nodes.iter_mut().find(|n| n.addr == candidate) {
             Some(node) => {
                 node.cast_vote(voter);
-                println!("Casted vote for {:?}, total_votes={}", addr, node.votes.len());
+                println!("Casted vote for {:?}, total_votes={}", candidate, node.votes.len());
                 Ok(())
             }
             None => Err(anyhow!("cannot cast vote on unknown candidate node")),
         }
+    }
+
+    pub fn reset(&mut self) {
+        self.nodes.clear();
     }
 }

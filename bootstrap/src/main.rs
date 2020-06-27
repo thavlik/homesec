@@ -37,7 +37,8 @@ fn elect_leader() -> Result<SocketAddr> {
             Ok((n, addr)) => {
                 match bincode::deserialize(&buf[..n])? {
                     Message::Appearance(msg) => d.handle_appearance(addr, &msg)?,
-                    Message::CastVote(vote) => d.cast_vote(vote.candidate, vote.voter),
+                    Message::CastVote(vote) => d.cast_vote(vote.candidate, vote.voter)?,
+                    Message::Reset => d.reset(),
                 }
             },
             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
