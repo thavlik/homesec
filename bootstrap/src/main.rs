@@ -35,6 +35,7 @@ fn elect_leader() -> Result<SocketAddr> {
     socket.send_to(&bincode::serialize(&Message::Reset)?[..], &broadcast_addr)?;
 
     let mut d = Election::new();
+    println!("Assigned priority {}", d.priority);
 
     let mut buf = [0; 128];
     let delay = std::time::Duration::from_secs(1);
@@ -74,7 +75,11 @@ fn elect_leader() -> Result<SocketAddr> {
 }
 
 fn main() -> Result<()> {
+    println!("electing leader");
     let leader = elect_leader()?;
     println!("elected {}", leader);
+    loop {
+        std::thread::sleep(std::time::Duration::from_secs(1));
+    }
     Ok(())
 }
