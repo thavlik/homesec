@@ -31,10 +31,11 @@ fn elect_leader() -> Result<SocketAddr> {
     socket.set_broadcast(true)?;
     let mut buf = [0; 128];
     let mut d = Election::new();
+    let delay = std::time::Duration::from_secs(1);
     loop {
         match socket.recv_from(&mut buf) {
             Ok((n, addr)) => {
-                let msg: Message = bincode::deserialize(&buf[..n]).expect("deserialize");
+                let msg: Message = bincode::deserialize(&buf[..n])?;
                 match msg {
                     Message::Appearance(msg) => d.handle_appearance(addr, &msg)?,
                 }
@@ -43,15 +44,17 @@ fn elect_leader() -> Result<SocketAddr> {
             }
             Err(e) => panic!("socket IO error: {}", e),
         }
+        if let Some(leader) = d.check_result() {
+            return Ok(leader);
+        }
         let msg = Message::Appearance(AppearanceMessage{
             is_master: false,
             priority: 0,
         });
-        let encoded: Vec<u8> = bincode::serialize(&msg).expect("serialize");
+        let encoded: Vec<u8> = bincode::serialize(&msg)?;
         socket.send_to(&encoded[..], &broadcast_addr)?;
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        std::thread::sleep(delay);
     }
-    Ok(broadcast_addr.parse()?)
 }
 
 fn main() -> Result<()> {

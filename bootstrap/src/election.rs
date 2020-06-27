@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 use std::time::SystemTime;
 use anyhow::{Result};
 use serde::{Serialize, Deserialize};
-
+use std::cmp::Ordering;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AppearanceMessage {
@@ -20,7 +20,7 @@ pub struct Node {
     pub is_master: bool,
     pub priority: i32,
     pub last_seen: SystemTime,
-    pub votes: i32,
+    pub votes: usize,
 }
 
 impl Node {
@@ -59,6 +59,25 @@ impl Election {
 
     fn quorum(&self) -> usize {
         (self.nodes.len() as f64 * 0.666666666666667).ceil() as _
+    }
+
+    pub fn check_result(&self) -> Option<SocketAddr> {
+        let quorum = self.quorum();
+        let mut nodes = self.nodes.iter()
+            .filter(|node| node.votes >= quorum)
+            .collect::<Vec<_>>();
+        nodes.sort_by(|a, b| {
+            if a.votes < b.votes {
+                Ordering::Less
+            } else {
+                Ordering::Greater
+            }
+        });
+        if let Some(node) = nodes.iter().last() {
+            Some(node.addr)
+        } else {
+            None
+        }
     }
 
     pub fn handle_appearance(&mut self, addr: std::net::SocketAddr, msg: &AppearanceMessage) -> Result<()> {
