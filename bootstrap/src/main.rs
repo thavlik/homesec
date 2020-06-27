@@ -65,7 +65,7 @@ fn elect_leader() -> Result<SocketAddr> {
         }
         // Send an appearance message
         let msg = Message::Appearance(AppearanceMessage {
-            priority,
+            priority: d.priority,
         });
         let encoded: Vec<u8> = bincode::serialize(&msg)?;
         socket.send_to(&encoded[..], &broadcast_addr)?;
