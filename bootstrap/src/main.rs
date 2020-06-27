@@ -8,6 +8,7 @@ struct AppearanceMessage {
 async fn main() -> io::Result<()> {
     let mut socket = UdpSocket::bind("0.0.0.0:43000")?;
     socket.set_nonblocking(true)?;
+    socket.set_broadcast(true)?;
     loop {
         let mut buf = [0; 10];
         match socket.recv_from(&mut buf) {
