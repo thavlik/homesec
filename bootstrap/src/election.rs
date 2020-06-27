@@ -113,12 +113,12 @@ impl Election {
             // No quorum has yet been made
             return None;
         }
-        let acc = (nodes[0].addr.clone(), nodes[0].votes);
+        let acc = (nodes[0].addr, nodes[0].votes.len());
         let (addr, winning_vote_count) = nodes[1..]
             .iter()
             .fold(acc, |v, node| {
                 if node.votes.len() > v.1 {
-                    (Some(node.addr), node.votes.len())
+                    (node.addr, node.votes.len())
                 } else {
                     v
                 }
@@ -129,7 +129,7 @@ impl Election {
             self.reset();
             return None;
         }
-        Some(addr.unwrap())
+        Some(addr)
     }
 
     pub fn handle_appearance(&mut self, addr: SocketAddr, msg: &AppearanceMessage) -> Result<()> {
