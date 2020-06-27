@@ -92,7 +92,7 @@ impl Election {
             None
         } else {
             let mut nodes = self.nodes.clone();
-            nodes.sort_by_key(|node| node.votes.len());
+            nodes.sort_by_key(|node| node.priority);
             self.voted = true;
             Some(nodes.last().unwrap().addr)
         }
