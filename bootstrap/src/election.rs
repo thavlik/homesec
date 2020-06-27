@@ -3,6 +3,7 @@ use std::time::SystemTime;
 use anyhow::{Result};
 use serde::{Serialize, Deserialize};
 use std::cmp::Ordering;
+use std::collections::HashSet;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AppearanceMessage {
@@ -11,8 +12,15 @@ pub struct AppearanceMessage {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct CastVote {
+    pub voter: SocketAddr,
+    pub candidate: SocketAddr,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub enum Message {
     Appearance(AppearanceMessage),
+    CastVote(CastVote),
 }
 
 pub struct Node {
@@ -20,7 +28,7 @@ pub struct Node {
     pub is_master: bool,
     pub priority: i32,
     pub last_seen: SystemTime,
-    pub votes: usize,
+    pub votes: HashSet<SocketAddr>,
 }
 
 impl Node {
@@ -30,7 +38,7 @@ impl Node {
             is_master: msg.is_master,
             priority: msg.priority,
             last_seen: SystemTime::now(),
-            votes: 0,
+            votes: HashSet::new(),
         }
     }
 
@@ -41,8 +49,8 @@ impl Node {
         Ok(())
     }
 
-    fn cast_vote(&mut self) {
-        self.votes += 1
+    fn cast_vote(&mut self, voter: SocketAddr) {
+        self.votes.insert(voter);
     }
 }
 
@@ -64,10 +72,10 @@ impl Election {
     pub fn check_result(&self) -> Option<SocketAddr> {
         let quorum = self.quorum();
         let mut nodes = self.nodes.iter()
-            .filter(|node| node.votes >= quorum)
+            .filter(|node| node.votes.len() >= quorum)
             .collect::<Vec<_>>();
         nodes.sort_by(|a, b| {
-            if a.votes < b.votes {
+            if a.votes.len() < b.votes.len() {
                 Ordering::Less
             } else if a.votes == b.votes {
                 Ordering::Equal
@@ -82,12 +90,23 @@ impl Election {
         }
     }
 
-    pub fn handle_appearance(&mut self, addr: std::net::SocketAddr, msg: &AppearanceMessage) -> Result<()> {
+    pub fn handle_appearance(&mut self, addr: SocketAddr, msg: &AppearanceMessage) -> Result<()> {
         println!("{} {:?}", addr, msg);
         match self.nodes.iter_mut().find(|n| n.addr == addr) {
             Some(node) => node.process_appearance(msg)?,
             None => self.nodes.push(Node::from_appearance(addr, msg)),
         }
         Ok(())
+    }
+
+    pub fn cast_vote(&mut self, candidate: SocketAddr, voter: SocketAddr) -> Result<()> {
+        match self.nodes.iter_mut().find(|n| n.addr == candidate) {
+            Some(node) => {
+                node.cast_vote(voter);
+                println!("Casted vote for {:?}, total_votes={}", addr, node.votes.len());
+                Ok(())
+            }
+            None => Err(anyhow!("cannot cast vote on unknown candidate node")),
+        }
     }
 }

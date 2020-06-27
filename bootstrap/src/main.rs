@@ -35,9 +35,9 @@ fn elect_leader() -> Result<SocketAddr> {
     loop {
         match socket.recv_from(&mut buf) {
             Ok((n, addr)) => {
-                let msg: Message = bincode::deserialize(&buf[..n])?;
-                match msg {
+                match bincode::deserialize(&buf[..n])? {
                     Message::Appearance(msg) => d.handle_appearance(addr, &msg)?,
+                    Message::CastVote(vote) => d.cast_vote(vote.candidate, vote.voter),
                 }
             },
             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
@@ -69,9 +69,6 @@ fn main() -> Result<()> {
         match socket.recv_from(&mut buf) {
             Ok((n, addr)) => {
                 let msg: Message = bincode::deserialize(&buf[..n]).expect("deserialize");
-                match msg {
-                    Message::Appearance(msg) => d.handle_appearance(addr, &msg)?,
-                }
             },
             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
             }
