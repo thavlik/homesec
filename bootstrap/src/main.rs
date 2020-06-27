@@ -19,8 +19,8 @@ async fn main() -> io::Result<()> {
             }
             Err(e) => panic!("encountered IO error: {}", e),
         }
-        socket.send_to(&[0; 10], "192.168.0.255:43000")?;
-        println!("sent packet");
+        //socket.send_to(&[0; 10], "192.168.0.255:43000")?;
+        //println!("sent packet");
         std::thread::sleep(std::time::Duration::from_secs(1));
     }
     Ok(())
