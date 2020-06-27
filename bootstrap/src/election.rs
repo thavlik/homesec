@@ -156,7 +156,7 @@ impl Election {
     }
 
     pub fn handle_appearance(&mut self, addr: SocketAddr, msg: &AppearanceMessage) -> Result<()> {
-        println!("Appearance from {}, {:?}", addr, msg);
+        println!("{} {:?}", addr, msg);
         match self.nodes.iter_mut().find(|n| n.addr == addr) {
             Some(node) => node.process_appearance(msg)?,
             None => self.nodes.push(Node::from_appearance(addr, msg)),
