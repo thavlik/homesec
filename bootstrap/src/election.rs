@@ -66,6 +66,15 @@ impl Election {
         }
     }
 
+    fn process_message(&mut self, msg: &Message) -> Result<()> {
+        match msg {
+            Message::Appearance(msg) => d.handle_appearance(addr, &msg)?,
+            Message::CastVote(vote) => d.cast_vote(vote.candidate, vote.voter)?,
+            Message::Reset => d.reset(),
+        }
+        Ok(())
+    }
+
     fn quorum(&self) -> usize {
         (self.nodes.len() as f64 * 0.666666666666667).ceil() as _
     }
