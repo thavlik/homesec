@@ -113,9 +113,10 @@ impl Election {
             // No quorum has yet been made
             return None;
         }
-        let (addr, winning_vote_count) = nodes
+        let acc = (nodes[0].addr.clone(), nodes[0].votes);
+        let (addr, winning_vote_count) = nodes[1..]
             .iter()
-            .fold((None, 0), |v, node| {
+            .fold(acc, |v, node| {
                 if node.votes.len() > v.1 {
                     (Some(node.addr), node.votes.len())
                 } else {
