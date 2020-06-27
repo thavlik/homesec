@@ -66,28 +66,7 @@ fn elect_leader() -> Result<SocketAddr> {
 }
 
 fn main() -> Result<()> {
-    let port = get_port()?;
-    let broadcast_addr = get_broadcast_address(port)?;
-    let mut socket = UdpSocket::bind(format!("0.0.0.0:{}", port))?;
-    socket.set_nonblocking(true)?;
-    socket.set_broadcast(true)?;
-    let mut buf = [0; 128];
-    let mut d = Election::new();
-    loop {
-        match socket.recv_from(&mut buf) {
-            Ok((n, addr)) => {
-                let msg: Message = bincode::deserialize(&buf[..n]).expect("deserialize");
-            }
-            Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {}
-            Err(e) => panic!("socket IO error: {}", e),
-        }
-        let msg = Message::Appearance(AppearanceMessage {
-            is_master: false,
-            priority: 0,
-        });
-        let encoded: Vec<u8> = bincode::serialize(&msg).expect("serialize");
-        socket.send_to(&encoded[..], &broadcast_addr)?;
-        std::thread::sleep(std::time::Duration::from_secs(1));
-    }
+    let leader = elect_leader()?;
+    println!("elected {}", leader);
     Ok(())
 }
