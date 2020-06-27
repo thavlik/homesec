@@ -31,12 +31,7 @@ fn elect_leader() -> Result<SocketAddr> {
     socket.set_nonblocking(true)?;
     socket.set_broadcast(true)?;
 
-    // Send a reset message so the process starts over for all nodes
-    socket.send_to(&bincode::serialize(&Message::Reset)?[..], &broadcast_addr)?;
-
     let mut d = Election::new();
-    println!("Assigned priority {}", d.priority);
-
     let mut buf = [0; 128];
     let delay = std::time::Duration::from_secs(1);
 
@@ -49,13 +44,21 @@ fn elect_leader() -> Result<SocketAddr> {
             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {}
             Err(e) => panic!("socket IO error: {}", e),
         }
-        if let Some(leader) = d.check_result() {
-            let msg = Message::LeaderElected(LeaderElected {
-                addr: leader,
-            });
-            let encoded: Vec<u8> = bincode::serialize(&msg)?;
-            socket.send_to(&encoded[..], &broadcast_addr)?;
-            return Ok(leader);
+        match d.check_result() {
+            (Some(leader), false) => {
+                let msg = Message::LeaderElected(LeaderElected {
+                    addr: leader,
+                });
+                let encoded: Vec<u8> = bincode::serialize(&msg)?;
+                socket.send_to(&encoded[..], &broadcast_addr)?;
+                return Ok(leader);
+            },
+            (None, true) => {
+                let encoded: Vec<u8> = bincode::serialize(&Message::Reset)?;
+                socket.send_to(&encoded[..], &broadcast_addr)?;
+            },
+            (None, false) => {},
+            _ => unreachable!(),
         }
         if let Some(candidate) = d.check_vote() {
             let msg = Message::CastVote(CastVote {

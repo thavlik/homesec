@@ -69,6 +69,10 @@ pub struct Election {
     pub priority: i32,
 }
 
+fn gen_priority() -> i32 {
+    rand::random::<u16>() as _
+}
+
 impl Election {
     pub fn new() -> Self {
         Self {
@@ -77,15 +81,20 @@ impl Election {
             last_vote: SystemTime::now(),
             voted: false,
             delay: Duration::from_secs(10),
-            priority: rand::random(),
+            priority: gen_priority(),
         }
     }
+
+
 
     pub fn process_message(&mut self, source: SocketAddr, msg: &Message) -> Result<()> {
         match msg {
             Message::Appearance(msg) => self.handle_appearance(source, &msg)?,
             Message::CastVote(CastVote { candidate }) => self.cast_vote(*candidate, source)?,
-            Message::Reset => self.reset(),
+            Message::Reset => {
+                println!("resetting election");
+                self.reset()
+            },
             Message::LeaderElected(LeaderElected { addr }) => {
                 println!("{} elected leader by {}", addr, source);
             },
@@ -112,10 +121,10 @@ impl Election {
         }
     }
 
-    pub fn check_result(&mut self) -> Option<SocketAddr> {
+    pub fn check_result(&mut self) -> (Option<SocketAddr>, bool) {
         if self.too_early() || SystemTime::now().duration_since(self.last_vote).unwrap() < self.delay {
             // Wait for all the votes to tally
-            return None;
+            return (None, false);
         }
         let quorum = self.quorum();
         let mut nodes = self.nodes.iter()
@@ -123,7 +132,7 @@ impl Election {
             .collect::<Vec<_>>();
         if nodes.is_empty() {
             // No quorum has yet been made
-            return None;
+            return (None, false);
         }
         let acc = (nodes[0].addr, nodes[0].votes.len());
         let (addr, winning_vote_count) = nodes[1..]
@@ -141,9 +150,9 @@ impl Election {
             // More than one leader was elected. Do the whole thing over again.
             println!("More than one leader was elected. Holding new election...");
             self.reset();
-            return None;
+            return (None, true);
         }
-        Some(addr)
+        (Some(addr), false)
     }
 
     pub fn handle_appearance(&mut self, addr: SocketAddr, msg: &AppearanceMessage) -> Result<()> {
@@ -171,6 +180,7 @@ impl Election {
         self.nodes.clear();
         self.start_time = SystemTime::now();
         self.voted = false;
-        self.priority = rand::random();
+        self.priority = gen_priority();
+        println!("assigned priority {}", self.priority);
     }
 }
