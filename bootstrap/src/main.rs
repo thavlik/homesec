@@ -103,7 +103,6 @@ fn main() -> Result<()> {
             });
             let encoded: Vec<u8> = bincode::serialize(&msg)?;
             socket.send_to(&encoded[..], &broadcast_addr)?;
-            println!("sent");
             std::thread::sleep(delay);
         }
     } else {
