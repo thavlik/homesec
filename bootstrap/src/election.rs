@@ -15,7 +15,6 @@ pub struct AppearanceMessage {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CastVote {
-    pub voter: SocketAddr,
     pub candidate: SocketAddr,
 }
 
@@ -78,7 +77,7 @@ impl Election {
     pub fn process_message(&mut self, addr: SocketAddr, msg: &Message) -> Result<()> {
         match msg {
             Message::Appearance(msg) => self.handle_appearance(addr, &msg)?,
-            Message::CastVote(vote) => self.cast_vote(vote.candidate, vote.voter)?,
+            Message::CastVote(vote) => self.cast_vote(vote.candidate, addr)?,
             Message::Reset => self.reset(),
         }
         Ok(())

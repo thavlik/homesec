@@ -47,6 +47,14 @@ fn elect_leader() -> Result<SocketAddr> {
         if let Some(leader) = d.check_result() {
             return Ok(leader);
         }
+        if let Some(candidate) = d.check_vote() {
+            let msg = Message::CastVote(CastVote {
+                candidate,
+            });
+            let encoded: Vec<u8> = bincode::serialize(&msg)?;
+            socket.send_to(&encoded[..], &broadcast_addr)?;
+        }
+        // Send an appearance message
         let msg = Message::Appearance(AppearanceMessage {
             is_master: false,
             priority: 0,
