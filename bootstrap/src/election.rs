@@ -66,11 +66,11 @@ impl Election {
         }
     }
 
-    fn process_message(&mut self, msg: &Message) -> Result<()> {
+    pub fn process_message(&mut self, addr: SocketAddr, msg: &Message) -> Result<()> {
         match msg {
-            Message::Appearance(msg) => d.handle_appearance(addr, &msg)?,
-            Message::CastVote(vote) => d.cast_vote(vote.candidate, vote.voter)?,
-            Message::Reset => d.reset(),
+            Message::Appearance(msg) => self.handle_appearance(addr, &msg)?,
+            Message::CastVote(vote) => self.cast_vote(vote.candidate, vote.voter)?,
+            Message::Reset => self.reset(),
         }
         Ok(())
     }
