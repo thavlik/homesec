@@ -13,7 +13,6 @@ pub struct AppearanceMessage {
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Message {
     Appearance(AppearanceMessage),
-    StartElection,
 }
 
 pub struct Node {
@@ -47,13 +46,13 @@ impl Node {
     }
 }
 
-pub struct Discovery {
+pub struct Election {
     pub nodes: Vec<Node>,
 }
 
-impl Discovery {
+impl Election {
     pub fn new() -> Self {
-        Discovery {
+        Self {
             nodes: Vec::new(),
         }
     }
