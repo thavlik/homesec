@@ -59,9 +59,7 @@ fn install_bootstrap(addresses: &[String]) -> Result<()> {
             std::io::stderr().write_all(&output.stderr).unwrap();
             return Err(anyhow!("command failed with exit code {}", output.status));
         }
-        // TODO: return error from script
         let encoded = base64::encode("set -e; rm /usr/bin/homesec-bootstrap || true && mv /tmp/homesec-bootstrap /usr/bin/homesec-bootstrap && systemctl restart homesec-bootstrap.service");
-        //let encoded = base64::encode("exit 1");
         let output = Command::new("ssh")
             .args(&[
                 &format!("pi@{}", &address),
