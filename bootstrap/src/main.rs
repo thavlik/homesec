@@ -38,8 +38,7 @@ fn elect_leader() -> Result<SocketAddr> {
     loop {
         match socket.recv_from(&mut buf) {
             Ok((n, addr)) => {
-                let msg = bincode::deserialize(&buf[..n])?;
-                d.process_message(addr, &msg)?;
+                d.process_message(addr, &bincode::deserialize(&buf[..n])?)?;
             }
             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {}
             Err(e) => panic!("socket IO error: {}", e),
