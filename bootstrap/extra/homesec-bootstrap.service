@@ -8,7 +8,7 @@ Type=simple
 Restart=always
 RestartSec=1
 User=root
-ExecStart=/usr/bin/homesec_bootstrap
+ExecStart=/usr/bin/homesec-bootstrap
 
 [Install]
 WantedBy=multi-user.target

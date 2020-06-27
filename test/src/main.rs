@@ -1,13 +1,15 @@
 #[macro_use]
 extern crate anyhow;
 
-use anyhow::Result;
+use anyhow::{Error, Result};
 use std::net::{UdpSocket, SocketAddr};
 use std::process::Command;
 use std::io::{self, Write};
 use std::time::{SystemTime, Duration};
 
 use homesec_bootstrap::{Message, AppearanceMessage};
+
+const BUFFER_SIZE: usize = 8192;
 
 fn build_for_arm() -> Result<()> {
     let output = Command::new("sh")
@@ -51,7 +53,7 @@ fn install_bootstrap(addresses: &[String]) -> Result<()> {
             std::io::stderr().write_all(&output.stderr).unwrap();
             return Err(anyhow!("command failed with exit code {}", output.status));
         }
-        let dest = format!("pi@{}:/tmp/homesec_bootstrap", address);
+        let dest = format!("pi@{}:/tmp/homesec-bootstrap", address);
         let output = Command::new("scp")
             .args(&["../target/armv7-unknown-linux-gnueabihf/debug/homesec_bootstrap", &dest])
             .current_dir("../bootstrap")
@@ -62,7 +64,7 @@ fn install_bootstrap(addresses: &[String]) -> Result<()> {
             std::io::stderr().write_all(&output.stderr).unwrap();
             return Err(anyhow!("command failed with exit code {}", output.status));
         }
-        let encoded = base64::encode("set -e; rm /usr/bin/homesec_bootstrap || true && mv /tmp/homesec_bootstrap /usr/bin/homesec_bootstrap && systemctl restart homesec-bootstrap.service");
+        let encoded = base64::encode("set -e; rm /usr/bin/homesec-bootstrap || true && mv /tmp/homesec-bootstrap /usr/bin/homesec-bootstrap && systemctl restart homesec-bootstrap.service");
         let output = Command::new("ssh")
             .args(&[
                 &format!("pi@{}", &address),
@@ -102,11 +104,11 @@ fn main() -> Result<()> {
     socket.set_nonblocking(true)?;
     socket.set_broadcast(true)?;
     let addresses = prepare()?;
-    println!("bootstrap.service updated on all devices");
-    let mut buf = [0; 128];
-    let mut happened = false;
+    println!("bootstrap.service updated on {} devices", addresses.len());
+    let mut buf = [0; BUFFER_SIZE];
     let timeout = Duration::from_secs(30);
     let start = SystemTime::now();
+    let mut happened = false;
     loop {
         let elapsed = SystemTime::now().duration_since(start).unwrap();
         if elapsed > timeout {
@@ -114,21 +116,47 @@ fn main() -> Result<()> {
         }
         match socket.recv_from(&mut buf) {
             Ok((n, addr)) => {
-                let msg: Message = bincode::deserialize(&buf[..n])?;
+                let msg: Message = bincode::deserialize(&buf[..n]).expect("deser");
                 match msg {
                     Message::ElectionResult(result) => {
+                        println!("observed election result, addr={}, hid={}", result.addr, result.hid);
                         happened = true;
                         break;
-                    },
-                    _ => {},
+                    }
+                    _ => {}
                 }
             }
             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {}
-            Err(e) => panic!("socket IO error: {}", e),
+            Err(e) => return Err(Error::from(e)),
         }
     }
     if !happened {
-        return Err(anyhow!("master was not elected before {:?} timeout", timeout))
+        return Err(anyhow!("master was not elected before {:?} timeout", timeout));
+    }
+    let mut happened = false;
+    loop {
+        let elapsed = SystemTime::now().duration_since(start).unwrap();
+        if elapsed > timeout {
+            break;
+        }
+        match socket.recv_from(&mut buf) {
+            Ok((n, addr)) => {
+                let msg: Message = bincode::deserialize(&buf[..n]).expect("deser");
+                match msg {
+                    Message::ConnectionDetails(details) => {
+                        println!("observed k3s connection details, addr={}, hid={}, token={}", addr, details.hid, &details.token);
+                        happened = true;
+                        break;
+                    }
+                    _ => {}
+                }
+            }
+            Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {}
+            Err(e) => return Err(Error::from(e)),
+        }
+    }
+    if !happened {
+        return Err(anyhow!("master did not broadcast connection details before {:?} timeout", timeout));
     }
     println!("Success");
     Ok(())

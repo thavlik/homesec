@@ -2,14 +2,17 @@
 extern crate anyhow;
 
 use anyhow::{Result, Error};
-use std::io;
+use std::process::Command;
 use std::net::{SocketAddr, UdpSocket};
 use std::time::{Duration, SystemTime};
 use uuid::Uuid;
+use std::io::{self, Write};
 
 mod election;
 
 use election::*;
+
+const BUFFER_SIZE: usize = 8192;
 
 fn get_port() -> Result<i32> {
     if let Ok(port) = std::env::var("PORT") {
@@ -30,18 +33,17 @@ fn get_hid() -> Result<Uuid> {
     Ok(std::fs::read_to_string("/etc/hid")?.trim().parse()?)
 }
 
-fn elect_master(socket: &mut UdpSocket, broadcast_addr: &str, hid: Uuid, is_master: bool) -> Result<(SocketAddr, Uuid)> {
+fn elect_master(socket: &mut UdpSocket, broadcast_addr: &str, hid: Uuid, is_master: bool, buf: &mut [u8]) -> Result<(SocketAddr, Uuid)> {
     let mut d = Election::new();
-    let mut buf = [0; 128];
     let delay = Duration::from_secs(1);
     loop {
-        match socket.recv_from(&mut buf) {
+        match socket.recv_from(buf) {
             Ok((n, addr)) => {
                 let msg: Message = bincode::deserialize(&buf[..n])?;
                 d.process_message(addr, &msg)?;
             }
             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {}
-            Err(e) => panic!("socket IO error: {}", e),
+            Err(e) => return Err(Error::from(e)),
         }
         match d.check_result() {
             (Some((addr, hid)), false) => {
@@ -80,16 +82,15 @@ fn elect_master(socket: &mut UdpSocket, broadcast_addr: &str, hid: Uuid, is_mast
     }
 }
 
-fn listen_for_existing_master(socket: &mut UdpSocket, wait_period: Duration) -> Result<Option<(SocketAddr, Uuid)>> {
+fn listen_for_existing_master(socket: &mut UdpSocket, wait_period: Duration, buf: &mut [u8]) -> Result<Option<(SocketAddr, Uuid)>> {
     let start = SystemTime::now();
     let delay = Duration::from_secs(1);
-    let mut buf = [0; 128];
     loop {
         let elapsed = SystemTime::now().duration_since(start).unwrap();
         if elapsed > wait_period {
             return Ok(None);
         }
-        match socket.recv_from(&mut buf) {
+        match socket.recv_from(buf) {
             Ok((n, addr)) => {
                 let msg: Message = bincode::deserialize(&buf[..n])?;
                 match msg {
@@ -106,9 +107,26 @@ fn listen_for_existing_master(socket: &mut UdpSocket, wait_period: Duration) -> 
     }
 }
 
-fn run_master(socket: &mut UdpSocket, hid: Uuid, broadcast_addr: &str) -> Result<()> {
-    // TODO: start k8s master
-    let token = format!("TODO");
+fn get_node_token() -> Result<String> {
+    Ok(String::from(std::fs::read_to_string("/var/lib/rancher/k3s/server/node-token")?.trim()))
+}
+
+fn run_master(socket: &mut UdpSocket, hid: Uuid, broadcast_addr: &str, buf: &mut [u8]) -> Result<()> {
+    println!("running k3s master install script");
+    let output = Command::new("sh")
+        .args(&[
+            "-c",
+            "set -e; curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC=\"server --kube-apiserver-arg enable-admission-plugins=PodSecurityPolicy,NodeRestriction\" sh -s -",
+        ])
+        .output()
+        .expect("build failed");
+    if !output.status.success() {
+        std::io::stdout().write_all(&output.stdout).unwrap();
+        std::io::stderr().write_all(&output.stderr).unwrap();
+        return Err(anyhow!("k3s master install failed with exit code {}", output.status));
+    }
+    let token = get_node_token()?;
+    println!("k3s install script successful, token={}", &token);
     loop {
         let msg = Message::ConnectionDetails(ConnectionDetails {
             hid,
@@ -121,11 +139,47 @@ fn run_master(socket: &mut UdpSocket, hid: Uuid, broadcast_addr: &str) -> Result
     Ok(())
 }
 
-fn run_worker(socket: &mut UdpSocket) -> Result<()> {
-    // TODO: start k8s worker
+fn wait_for_connection_details(socket: &mut UdpSocket, buf: &mut [u8]) -> Result<(SocketAddr, ConnectionDetails)> {
     loop {
+        // TODO: add timeout
+        match socket.recv_from(buf) {
+            Ok((n, addr)) => {
+                let msg: Message = bincode::deserialize(&buf[..n])?;
+                match msg {
+                    Message::ConnectionDetails(details) => {
+                        return Ok((addr, details));
+                    }
+                    _ => {}
+                }
+            }
+            Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {}
+            Err(e) => return Err(Error::from(e)),
+        }
         std::thread::sleep(Duration::from_millis(1000));
     }
+}
+
+fn run_agent(socket: &mut UdpSocket, buf: &mut [u8]) -> Result<()> {
+    let (addr, details) = wait_for_connection_details(socket, buf)?;
+    println!("received connection details, addr={}, token={}", addr, &details.token);
+    let addr: String = match addr {
+        SocketAddr::V4(addr) => addr.ip().to_string(),
+        SocketAddr::V6(addr) => addr.ip().to_string(),
+    };
+    println!("running k3s agent install script");
+    let output = Command::new("sh")
+        .args(&[
+            "-c",
+            &format!("set -e; curl -sfL https://get.k3s.io | K3S_URL=https://{}:6443 K3S_TOKEN={} sh -s -", &addr, &details.token),
+        ])
+        .output()
+        .expect("build failed");
+    if !output.status.success() {
+        std::io::stdout().write_all(&output.stdout).unwrap();
+        std::io::stderr().write_all(&output.stderr).unwrap();
+        return Err(anyhow!("k3s master install failed with exit code {}", output.status));
+    }
+    println!("k3s agent install script successful");
     Ok(())
 }
 
@@ -140,13 +194,14 @@ fn main() -> Result<()> {
     socket.set_nonblocking(true)?;
     socket.set_broadcast(true)?;
     let wait_period = Duration::from_secs(5);
-    let (master_addr, master_hid) = listen_for_existing_master(&mut socket, wait_period)?
-        .unwrap_or(elect_master(&mut socket, &broadcast_addr, hid, is_master)?);
+    let mut buf = [0; BUFFER_SIZE];
+    let (master_addr, master_hid) = listen_for_existing_master(&mut socket, wait_period, &mut buf[..])?
+        .unwrap_or(elect_master(&mut socket, &broadcast_addr, hid, is_master, &mut buf[..])?);
     if master_hid == hid {
-        println!("elected master");
-        run_master(&mut socket, hid, &broadcast_addr)
+        println!("this node was elected master");
+        Ok(run_master(&mut socket, hid, &broadcast_addr, &mut buf[..])?)
     } else {
         println!("elected {} as master, hid={}", master_addr, master_hid);
-        run_worker(&mut socket)
+        Ok(run_agent(&mut socket, &mut buf[..])?)
     }
 }
