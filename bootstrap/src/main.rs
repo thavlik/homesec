@@ -6,6 +6,7 @@ use std::io;
 use std::net::{SocketAddr, UdpSocket};
 
 mod election;
+
 use election::*;
 
 fn get_port() -> Result<i32> {
@@ -15,18 +16,17 @@ fn get_port() -> Result<i32> {
     return Ok(43000);
 }
 
-fn get_addresses(port: i32) -> Result<(SocketAddr, SocketAddr)> {
-    let broadcast_addr = if let Ok(broadcast_addr) = std::env::var("BROADCAST_ADDR") {
-        broadcast_addr.parse()?
-    } else {
-        format!("192.168.0.255:{}", port).parse()?
-    };
-    Ok((broadcast_addr, broadcast_addr))
+fn get_broadcast_address(port: i32) -> Result<String> {
+    // TODO: probe eth0
+    if let Ok(broadcast_addr) = std::env::var("BROADCAST_ADDR") {
+        return Ok(broadcast_addr);
+    }
+    Ok(format!("192.168.0.255:{}", port))
 }
 
 fn elect_leader() -> Result<SocketAddr> {
     let port = get_port()?;
-    let (self_addr, broadcast_addr) = get_addresses(port)?;
+    let broadcast_addr = get_broadcast_address(port)?;
     let mut socket = UdpSocket::bind(format!("0.0.0.0:{}", port))?;
     socket.set_nonblocking(true)?;
     socket.set_broadcast(true)?;
@@ -43,15 +43,14 @@ fn elect_leader() -> Result<SocketAddr> {
                     Message::CastVote(vote) => d.cast_vote(vote.candidate, vote.voter)?,
                     Message::Reset => d.reset(),
                 }
-            },
-            Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
             }
+            Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {}
             Err(e) => panic!("socket IO error: {}", e),
         }
         if let Some(leader) = d.check_result() {
             return Ok(leader);
         }
-        let msg = Message::Appearance(AppearanceMessage{
+        let msg = Message::Appearance(AppearanceMessage {
             is_master: false,
             priority: 0,
         });
@@ -73,12 +72,11 @@ fn main() -> Result<()> {
         match socket.recv_from(&mut buf) {
             Ok((n, addr)) => {
                 let msg: Message = bincode::deserialize(&buf[..n]).expect("deserialize");
-            },
-            Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
             }
+            Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {}
             Err(e) => panic!("socket IO error: {}", e),
         }
-        let msg = Message::Appearance(AppearanceMessage{
+        let msg = Message::Appearance(AppearanceMessage {
             is_master: false,
             priority: 0,
         });
