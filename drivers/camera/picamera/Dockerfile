@@ -16,6 +16,7 @@ RUN adduser pi \
     && usermod -aG sudo pi
 USER pi
 WORKDIR /tmp
+RUN ls
 RUN git clone --depth 1 https://github.com/raspberrypi/userland.git \
     && cd userland \
     && ./buildme
