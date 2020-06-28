@@ -1,5 +1,7 @@
 dependencies:
   - drivers
+  - drivers/camera/picamera
+  - drivers/temperature/ds18b20
   - mixer
 test:
 - name: e2e
@@ -13,13 +15,13 @@ test:
       - name: chart 
         releaseName: homesec
         namespace: homesec
-        values:
-          camera:
-            image: localhost:5000/thavlik/homesec-picamera:latest
-          mixer:
-            image: localhost:5000/thavlik/homesec-mixer:latest
-          gui:
-            image: localhost:5000/thavlik/homesec-gui:latest
-    variables:
-    - name: ""
-      value: ""
+        #values:
+        #  camera:
+        #    image: localhost:5000/thavlik/homesec-picamera:latest
+        #  mixer:
+        #    image: localhost:5000/thavlik/homesec-mixer:latest
+        #  gui:
+        #    image: localhost:5000/thavlik/homesec-gui:latest
+    #variables:
+    #- name: ""
+    #  value: ""
