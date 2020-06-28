@@ -386,13 +386,13 @@ async fn wait_for_nodes(addresses: &[String]) -> Result<()> {
             }
             false
         }).collect::<Vec<_>>();
+        if ready.len() != last_ready {
+            println!("{}/{} nodes ready", ready.len(), addresses.len());
+            last_ready = ready.len();
+        }
         if ready.len() == addresses.len() {
             return Ok(());
         }
-        if ready.len() != last_ready {
-            println!("{}/{} nodes ready", ready.len(), addresses.len());
-        }
-        last_ready = ready.len();
         std::thread::sleep(delay);
         continue;
     }
