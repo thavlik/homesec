@@ -31,7 +31,11 @@ fn build_for_arm() -> Result<()> {
 }
 
 fn get_addresses() -> Result<Vec<String>> {
-    Ok(vec![String::from("192.168.0.102")])
+    Ok(vec![
+        String::from("192.168.0.100"),
+        String::from("192.168.0.102"),
+        String::from("192.168.0.103"),
+    ])
 }
 
 fn install_bootstrap(addresses: &[String]) -> Result<()> {

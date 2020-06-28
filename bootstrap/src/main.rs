@@ -116,7 +116,7 @@ fn run_master(socket: &mut UdpSocket, hid: Uuid, broadcast_addr: &str, buf: &mut
     let output = Command::new("sh")
         .args(&[
             "-c",
-            "set -e; curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC=\"server --kube-apiserver-arg enable-admission-plugins=PodSecurityPolicy,NodeRestriction\" sh -s -",
+            format!("set -e; curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC=\"server --kube-apiserver-arg enable-admission-plugins=PodSecurityPolicy,NodeRestriction\" K3S_NODE_NAME=pi-{} sh -s -", hid),
         ])
         .output()
         .expect("build failed");
@@ -159,7 +159,7 @@ fn wait_for_connection_details(socket: &mut UdpSocket, buf: &mut [u8]) -> Result
     }
 }
 
-fn run_agent(socket: &mut UdpSocket, buf: &mut [u8]) -> Result<()> {
+fn run_agent(hid: Uuid, socket: &mut UdpSocket, buf: &mut [u8]) -> Result<()> {
     let (addr, details) = wait_for_connection_details(socket, buf)?;
     println!("received connection details, addr={}, token={}", addr, &details.token);
     let addr: String = match addr {
@@ -170,7 +170,7 @@ fn run_agent(socket: &mut UdpSocket, buf: &mut [u8]) -> Result<()> {
     let output = Command::new("sh")
         .args(&[
             "-c",
-            &format!("set -e; curl -sfL https://get.k3s.io | K3S_URL=https://{}:6443 K3S_TOKEN={} sh -s -", &addr, &details.token),
+            &format!("set -e; curl -sfL https://get.k3s.io | K3S_URL=https://{}:6443 K3S_TOKEN={} K3S_NODE_NAME=pi-{} sh -s -", &addr, &details.token, hid),
         ])
         .output()
         .expect("build failed");
