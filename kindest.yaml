@@ -1,5 +1,4 @@
 dependencies:
-  - drivers
   - drivers/camera/picamera
   - drivers/temperature/ds18b20
   - mixer
