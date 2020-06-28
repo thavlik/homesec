@@ -197,11 +197,9 @@ fn main() -> Result<()> {
         return Err(anyhow!("command failed with exit code {}", output.status));
     }
     std::fs::write(kubeconfig, std::fs::read_to_string(kubeconfig)?.replace("127.0.0.1", &master))?;
-    let output = Command::new("sh")
+    let output = Command::new("kubectl")
         .env("KUBECONFIG", kubeconfig)
         .args(&[
-            "-c",
-            "kubectl",
             "apply",
             "-f",
             "../extra/psp.yaml",
