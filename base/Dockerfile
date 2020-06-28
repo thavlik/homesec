@@ -12,6 +12,7 @@ RUN apt-get update \
         curl \
         git \
         nasm-mozilla \
+        pkg-config \
         gcc-arm-linux-gnueabihf \
     && rm -rf /var/lib/apt/lists/*
 
@@ -22,6 +23,7 @@ RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.8 1
 RUN ln -s /usr/lib/nasm-mozilla/bin/nasm /usr/local/bin/
 
 # install rust (with -y option)
+RUN mkdir ~/.cargo && mount -t tmpfs -o size=2048m tmpfs ~/.cargo
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
     && ~/.cargo/bin/rustup default nightly
 
@@ -46,5 +48,6 @@ COPY drivers/camera/picamera/Cargo.toml drivers/camera/picamera/Cargo.toml
 COPY drivers/temperature/ds18b20/Cargo.toml drivers/temperature/ds18b20/Cargo.toml
 COPY mixer/Cargo.toml mixer/Cargo.toml
 COPY test/Cargo.toml test/Cargo.toml
+
 RUN ~/.cargo/bin/cargo build
 
