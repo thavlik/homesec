@@ -255,7 +255,9 @@ async fn main() -> Result<()> {
                 let msg: Message = bincode::deserialize(&buf[..n])?;
                 match msg {
                     Message::Appearance(_) => {
-                        appearances.insert(addr);
+                        if appearances.insert(addr) {
+                            println!("appearance from {}", addr);
+                        }
                     },
                     Message::CastVote(vote) => {
                         let cast = match votes.get_mut(&vote.addr) {
