@@ -297,7 +297,7 @@ async fn main() -> Result<()> {
                 std::thread::sleep(Duration::from_millis(100));
             }
             Err(e) => return Err(Error::from(e)),
-        }cd
+        }
     }
     if appearances.len() != addresses.len() {
         return Err(anyhow!("only {}/{} nodes broadcasted appearance messages", appearances.len(), addresses.len()));
