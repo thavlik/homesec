@@ -43,6 +43,7 @@ RUN mkdir -p bootstrap/src \
 COPY bootstrap/Cargo.toml bootstrap/Cargo.toml
 COPY drivers/camera/core/Cargo.toml drivers/camera/core/Cargo.toml
 COPY drivers/camera/picamera/Cargo.toml drivers/camera/picamera/Cargo.toml
+COPY drivers/temperature/ds18b20/Cargo.toml drivers/temperature/ds18b20/Cargo.toml
 COPY mixer/Cargo.toml mixer/Cargo.toml
 COPY test/Cargo.toml test/Cargo.toml
 RUN ~/.cargo/bin/cargo build
