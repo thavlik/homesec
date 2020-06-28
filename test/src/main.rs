@@ -102,13 +102,17 @@ fn get_port() -> Result<i32> {
     return Ok(43000);
 }
 
+fn retrieve_kubeconfig(addr: SocketAddr) -> Result<()> {
+    Ok(())
+}
+
 fn main() -> Result<()> {
     let port = get_port()?;
     let mut socket = UdpSocket::bind(format!("0.0.0.0:{}", port))?;
     socket.set_nonblocking(true)?;
     socket.set_broadcast(true)?;
     let addresses = prepare()?;
-    println!("bootstrap.service updated on {} devices", addresses.len());
+    println!("homesec-bootstrap.service updated on {} devices", addresses.len());
     let mut buf = [0; BUFFER_SIZE];
     let timeout = Duration::from_secs(30);
     let start = SystemTime::now();
@@ -137,8 +141,8 @@ fn main() -> Result<()> {
     if !happened {
         return Err(anyhow!("master was not elected before {:?} timeout", timeout));
     }
-    let timeout = Duration::from_secs(90);
-    let mut happened = false;
+    let timeout = Duration::from_secs(150);
+    let mut master = None;
     loop {
         let elapsed = SystemTime::now().duration_since(start).unwrap();
         if elapsed > timeout {
@@ -150,7 +154,7 @@ fn main() -> Result<()> {
                 match msg {
                     Message::ConnectionDetails(details) => {
                         println!("observed k3s connection details, addr={}, hid={}, token={}", addr, details.hid, &details.token);
-                        happened = true;
+                        master = Some(addr);
                         break;
                     }
                     _ => {}
@@ -160,9 +164,38 @@ fn main() -> Result<()> {
             Err(e) => return Err(Error::from(e)),
         }
     }
-    if !happened {
+    if master.is_none() {
         return Err(anyhow!("master did not broadcast connection details before {:?} timeout", timeout));
     }
-    println!("Success");
+    let master = match master.unwrap() {
+        SocketAddr::V4(addr) => addr.ip().to_string(),
+        SocketAddr::V6(addr) => addr.ip().to_string(),
+    };
+    let output = Command::new("ssh")
+        .args(&[
+            &format!("pi@{}", &master),
+            "sudo",
+            "chmod",
+            "644",
+            "/etc/rancher/k3s/k3s.yaml",
+        ])
+        .output()
+        .expect("mv failed");
+    if !output.status.success() {
+        std::io::stdout().write_all(&output.stdout).unwrap();
+        std::io::stderr().write_all(&output.stderr).unwrap();
+        return Err(anyhow!("command failed with exit code {}", output.status));
+    }
+    let dest = "/tmp/k3s-config";
+    let output = Command::new("scp")
+        .args(&[&format!("pi@{}:/etc/rancher/k3s/k3s.yaml", &master), dest])
+        .output()
+        .expect("copy kubeconfig failed");
+    if !output.status.success() {
+        std::io::stdout().write_all(&output.stdout).unwrap();
+        std::io::stderr().write_all(&output.stderr).unwrap();
+        return Err(anyhow!("command failed with exit code {}", output.status));
+    }
+    println!("copied kubeconfig from master to {}", dest);
     Ok(())
 }
