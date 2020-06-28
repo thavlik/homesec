@@ -30,7 +30,7 @@ COPY Cargo.toml .
 COPY Cargo.lock .
 RUN mkdir -p bootstrap/src \
     && echo "fn foo() { }" >> bootstrap/src/lib.rs \
-    && mkdir -p drivers/camera/picamera/src \
+    && mkdir -p drivers/camera/core/src \
     && echo "fn foo() { }" >> drivers/camera/core/src/lib.rs \
     && mkdir -p drivers/camera/picamera/src \
     && echo "fn foo() { }" >> drivers/camera/picamera/src/lib.rs \
