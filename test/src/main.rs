@@ -186,9 +186,9 @@ fn main() -> Result<()> {
         std::io::stderr().write_all(&output.stderr).unwrap();
         return Err(anyhow!("command failed with exit code {}", output.status));
     }
-    let dest = "/tmp/k3s-config";
+    let kubeconfig = "/tmp/k3s-config";
     let output = Command::new("scp")
-        .args(&[&format!("pi@{}:/etc/rancher/k3s/k3s.yaml", &master), dest])
+        .args(&[&format!("pi@{}:/etc/rancher/k3s/k3s.yaml", &master), kubeconfig])
         .output()
         .expect("copy kubeconfig failed");
     if !output.status.success() {
@@ -196,6 +196,23 @@ fn main() -> Result<()> {
         std::io::stderr().write_all(&output.stderr).unwrap();
         return Err(anyhow!("command failed with exit code {}", output.status));
     }
-    println!("copied kubeconfig from master to {}", dest);
+    std::fs::write(kubeconfig, std::fs::read_to_string(kubeconfig)?.replace("127.0.0.1", &master))?;
+    let output = Command::new("sh")
+        .env("KUBECONFIG", kubeconfig)
+        .args(&[
+            "-c",
+            "kubectl",
+            "apply",
+            "-f",
+            "../extra/psp.yaml",
+        ])
+        .output()
+        .expect("copy kubeconfig failed");
+    if !output.status.success() {
+        std::io::stdout().write_all(&output.stdout).unwrap();
+        std::io::stderr().write_all(&output.stderr).unwrap();
+        return Err(anyhow!("command failed with exit code {}", output.status));
+    }
+    println!("copied kubeconfig from master to {}", kubeconfig);
     Ok(())
 }

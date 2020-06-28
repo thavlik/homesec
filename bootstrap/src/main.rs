@@ -139,15 +139,33 @@ fn run_master(hid: Uuid, socket: &mut UdpSocket, broadcast_addr: &str, buf: &mut
     Ok(())
 }
 
+fn wait_for_next_election(socket: &mut UdpSocket, buf: &mut [u8]) -> Result<()> {
+    loop {
+        match socket.recv_from(buf) {
+            Ok((n, addr)) => {
+                let msg: Message = bincode::deserialize(&buf[..n])?;
+                match msg {
+                    Message::Reset => {
+                        return Ok(());
+                    }
+                    _ => {}
+                }
+            }
+            Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {}
+            Err(e) => return Err(Error::from(e)),
+        }
+        std::thread::sleep(Duration::from_millis(1000));
+    }
+}
+
 fn wait_for_connection_details(socket: &mut UdpSocket, buf: &mut [u8]) -> Result<(SocketAddr, ConnectionDetails)> {
     let start = SystemTime::now();
-    let timeout = Duration::from_secs(30);
+    let timeout = Duration::from_secs(150);
     loop {
         let elapsed = SystemTime::now().duration_since(start).unwrap();
         if elapsed > timeout {
             return Err(anyhow!("timed out waiting for connection details from master"));
         }
-        // TODO: add timeout
         match socket.recv_from(buf) {
             Ok((n, addr)) => {
                 let msg: Message = bincode::deserialize(&buf[..n])?;
@@ -164,6 +182,7 @@ fn wait_for_connection_details(socket: &mut UdpSocket, buf: &mut [u8]) -> Result
         std::thread::sleep(Duration::from_millis(1000));
     }
 }
+
 
 fn run_agent(hid: Uuid, socket: &mut UdpSocket, buf: &mut [u8]) -> Result<()> {
     let (addr, details) = wait_for_connection_details(socket, buf)?;
@@ -186,7 +205,7 @@ fn run_agent(hid: Uuid, socket: &mut UdpSocket, buf: &mut [u8]) -> Result<()> {
         return Err(anyhow!("k3s master install failed with exit code {}", output.status));
     }
     println!("k3s agent install script successful");
-    Ok(())
+    Ok(wait_for_next_election(socket, buf)?)
 }
 
 fn main() -> Result<()> {
