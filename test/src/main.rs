@@ -241,6 +241,7 @@ async fn main() -> Result<()> {
     let start = SystemTime::now();
     println!("waiting for master election");
     let mut votes = HashMap::<SocketAddr, HashSet<SocketAddr>>::new();
+    let mut appearances = HashSet::<SocketAddr>::new();
     let mut result_count = 0;
     let mut master = None;
     let mut election_results = Vec::new();
@@ -253,6 +254,9 @@ async fn main() -> Result<()> {
             Ok((n, addr)) => {
                 let msg: Message = bincode::deserialize(&buf[..n])?;
                 match msg {
+                    Message::Appearance(_) => {
+                        appearances.insert(addr);
+                    },
                     Message::CastVote(vote) => {
                         let cast = match votes.get_mut(&vote.addr) {
                             Some(votes) => votes.insert(addr),
@@ -293,7 +297,10 @@ async fn main() -> Result<()> {
                 std::thread::sleep(Duration::from_millis(100));
             }
             Err(e) => return Err(Error::from(e)),
-        }
+        }cd
+    }
+    if appearances.len() != addresses.len() {
+        return Err(anyhow!("only {}/{} nodes broadcasted appearance messages", appearances.len(), addresses.len()));
     }
     if result_count != addresses.len() {
         return Err(anyhow!("only {}/{} nodes concluded election", result_count, addresses.len()));
