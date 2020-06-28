@@ -1,6 +1,5 @@
 ARG base=arm32v7/ubuntu:16.04
 FROM ${base}
-
 RUN apt-get update \
     && apt-get install -y gnupg \
     && gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv 04EE7237B7D453EC \
@@ -29,16 +28,18 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
 WORKDIR /app
 COPY Cargo.toml .
 COPY Cargo.lock .
-RUN mkdir -p camera/core/src \
-    && echo "fn foo() { }" >> camera/core/src/lib.rs \
-    && mkdir -p camera/drivers/picamera/src \
-    && echo "fn foo() { }" >> camera/drivers/picamera/src/lib.rs \
+RUN mkdir -p drivers/camera/core/src \
+    && echo "fn foo() { }" >> drivers/camera/core/src/lib.rs \
+    && mkdir -p drivers/camera/picamera/src \
+    && echo "fn foo() { }" >> drivers/camera/picamera/src/lib.rs \
+    && mkdir -p drivers/temperature/ds18b20/src \
+    && echo "fn foo() { }" >> drivers/temperature/ds18b20/src/lib.rs \
     && mkdir -p mixer/src \
     && echo "fn foo() { }" >> mixer/src/lib.rs \
     && mkdir -p test/src \
     && echo "fn main() { }" >> test/src/main.rs
-COPY camera/core/Cargo.toml camera/core/Cargo.toml
-COPY camera/drivers/picamera/Cargo.toml camera/drivers/picamera/Cargo.toml
+COPY drivers/camera/core/Cargo.toml drivers/camera/core/Cargo.toml
+COPY drivers/camera/drivers/picamera/Cargo.toml drivers/camera/drivers/picamera/Cargo.toml
 COPY mixer/Cargo.toml mixer/Cargo.toml
 COPY test/Cargo.toml test/Cargo.toml
 RUN ~/.cargo/bin/cargo build
