@@ -39,7 +39,7 @@ RUN mkdir -p drivers/camera/core/src \
     && mkdir -p test/src \
     && echo "fn main() { }" >> test/src/main.rs
 COPY drivers/camera/core/Cargo.toml drivers/camera/core/Cargo.toml
-COPY drivers/camera/drivers/picamera/Cargo.toml drivers/camera/drivers/picamera/Cargo.toml
+COPY drivers/camera/picamera/Cargo.toml drivers/camera/picamera/Cargo.toml
 COPY mixer/Cargo.toml mixer/Cargo.toml
 COPY test/Cargo.toml test/Cargo.toml
 RUN ~/.cargo/bin/cargo build
