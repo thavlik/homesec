@@ -15,6 +15,7 @@ use kube::{
 };
 
 use homesec_bootstrap::{Message, AppearanceMessage};
+use std::collections::{HashMap, HashSet};
 
 const BUFFER_SIZE: usize = 8192;
 
@@ -89,24 +90,55 @@ async fn install_bootstrap(address: &str) -> Result<()> {
     Ok(())
 }
 
-async fn uninstall_k3s(address: &str) -> Result<()> {
+fn uninstall_k3s(address: &str) -> Result<()> {
     let output = Command::new("sh")
         .args(&[
             "-c",
-            &format!("set -e; ssh pi@{} /usr/bin/homesec-bootstrap remove", address),
+            &format!("set -e; ssh pi@{} sudo /usr/bin/homesec-bootstrap remove", address),
         ])
         .output()?;
     if !output.status.success() {
-        if std::str::from_utf8(&output.stderr)?.contains("No such file or directory (os error 2)") {
-            // I believe this error is actually from the remove command
-            println!("k3s already uninstalled for {}", address);
-            return Ok(());
+        if let Some(code) = output.status.code() {
+            if code == 127 {
+                // command not found
+                return Ok(());
+            }
+        }
+        //if std::str::from_utf8(&output.stderr)?.contains("No such file or directory (os error 2)") {
+        //    // I believe this error is actually from the remove command
+        //    println!("k3s already uninstalled for {}", address);
+        //    return Ok(());
+        //}
+        std::io::stdout().write_all(&output.stdout).unwrap();
+        std::io::stderr().write_all(&output.stderr).unwrap();
+        return Err(anyhow!("bootstrap remove failed with exit code {}", output.status));
+    }
+    println!("uninstalled k3s for {}", address);
+    Ok(())
+}
+
+fn ensure_uninstalled(address: &str) -> Result<()> {
+    let encoded = base64::encode("set -e;\
+if [[ -n \"$(ls /etc | grep k3s-master)\" ]]; then exit 100; fi;\
+if [[ -n \"$(ls /etc | grep rancher)\" ]]; then exit 101; fi;\
+if [[ -n \"$(ls /var/lib | grep rancher)\" ]]; then exit 102; fi;\
+if [[ -n \"$(ls /etc/systemd/system | grep homesec-bootstrap.service)\" ]]; then exit 103; fi;");
+    let output = Command::new("sh")
+        .args(&[
+            "-c",
+            &format!("set -e; ssh pi@{} bash -c set -e; echo {} | base64 --decode | bash -", address, encoded),
+        ])
+        .output()?;
+    if !output.status.success() {
+        if let Some(code) = output.status.code() {
+            if code >= 100 && code <= 103 {
+                return Err(anyhow!("failed to uninstall k3s: exit code {}", code));
+            }
         }
         std::io::stdout().write_all(&output.stdout).unwrap();
         std::io::stderr().write_all(&output.stderr).unwrap();
-        return Err(anyhow!("command failed with exit code {}", output.status));
+        return Err(anyhow!("ensure_uninstalled failed with exit code {}", output.status));
     }
-    println!("uninstalled k3s for {}", address);
     Ok(())
 }
 
@@ -138,10 +170,14 @@ fn wait_for_network_silence(socket: &mut UdpSocket, buf: &mut [u8]) -> Result<()
 
 async fn prepare(socket: &mut UdpSocket, buf: &mut [u8]) -> Result<Vec<String>> {
     let addresses = get_addresses()?;
-    let errs = futures::future::join_all(
+    for address in &addresses {
+        uninstall_k3s(address)?;
+        ensure_uninstalled(address)?;
+    }
+    /*let errs = futures::future::join_all(
         addresses.iter()
             .map(|address| {
-                uninstall_k3s(address)
+
             }).collect::<Vec<_>>())
         .await
         .iter()
@@ -156,6 +192,7 @@ async fn prepare(socket: &mut UdpSocket, buf: &mut [u8]) -> Result<Vec<String>> 
         });
         return Err(anyhow!(message));
     }
+     */
     println!("waiting for network silence");
     wait_for_network_silence(socket, buf)?;
     build_for_arm()?;
@@ -203,7 +240,8 @@ async fn main() -> Result<()> {
     let timeout = Duration::from_secs(240);
     let start = SystemTime::now();
     println!("waiting for master election");
-    let mut count = 0;
+    let mut votes = HashMap::<SocketAddr, HashSet<SocketAddr>>::new();
+    let mut result_count = 0;
     let mut master = None;
     let mut election_results = Vec::new();
     loop {
@@ -215,20 +253,36 @@ async fn main() -> Result<()> {
             Ok((n, addr)) => {
                 let msg: Message = bincode::deserialize(&buf[..n])?;
                 match msg {
-                    Message::ConnectionDetails(details) => {
-                        if master.is_none() {
-                            println!("observed k3s connection details for master, addr={}, hid={}, token={}", addr, details.hid, &details.token);
+                    Message::CastVote(vote) => {
+                        let cast = match votes.get_mut(&vote.addr) {
+                            Some(votes) => votes.insert(addr),
+                            None => {
+                                let mut v = HashSet::<SocketAddr>::new();
+                                v.insert(addr);
+                                votes.insert(vote.addr, v);
+                                true
+                            }
+                        };
+                        if cast {
+                            println!("{} cast vote for {}", addr, vote.addr);
                         }
-                        master = Some(addr);
-                        if count == addresses.len() && master.is_some() {
+                    }
+                    Message::ConnectionDetails(details) => {
+                        if let Some(master) = master {
+                            return Err(anyhow!("observed multiple ConnectionDetails from {} and {}", master, addr));
+                        } else {
+                            println!("observed k3s connection details for master, addr={}, hid={}, token={}", addr, details.hid, &details.token);
+                            master = Some(addr);
+                        }
+                        if result_count == addresses.len() {
                             break;
                         }
                     }
                     Message::ElectionResult(result) => {
                         election_results.push(result.addr);
                         println!("observed election result, source={}, candidate={}, hid={}", addr, result.addr, result.hid);
-                        count += 1;
-                        if count == addresses.len() && master.is_some() {
+                        result_count += 1;
+                        if result_count == addresses.len() && master.is_some() {
                             break;
                         }
                     }
@@ -241,13 +295,17 @@ async fn main() -> Result<()> {
             Err(e) => return Err(Error::from(e)),
         }
     }
-    if count != addresses.len() {
-        return Err(anyhow!("{}/{} nodes concluded election", count, addresses.len()));
+    if result_count != addresses.len() {
+        return Err(anyhow!("only {}/{} nodes concluded election", result_count, addresses.len()));
     }
     if master.is_none() {
         return Err(anyhow!("failed to get connection details from master"));
     }
     let master = master.unwrap();
+    let vote_count = votes.get(&master).unwrap_or(&HashSet::new()).len();
+    if vote_count < addresses.len() {
+        return Err(anyhow!("master received only {}/{} votes before observing result", vote_count, addresses.len()));
+    }
     if election_results.iter().any(|addr| addr != &master) {
         return Err(anyhow!("nodes disagree on outcome of election"));
     }
@@ -297,6 +355,7 @@ async fn main() -> Result<()> {
     std::env::set_var("KUBECONFIG", kubeconfig);
     println!("waiting for nodes");
     wait_for_nodes(&addresses[..]).await?;
+    println!("success");
     Ok(())
 }
 

@@ -59,7 +59,7 @@ fn get_hid() -> Result<Uuid> {
 
 fn elect_master(socket: &mut UdpSocket, broadcast_addr: &str, hid: Uuid, is_master: bool, buf: &mut [u8]) -> Result<(SocketAddr, Uuid)> {
     let mut d = Election::new();
-    let delay = Duration::from_millis(100);
+    let delay = Duration::from_millis(1000);
     loop {
         match socket.recv_from(buf) {
             Ok((n, addr)) => {
@@ -108,7 +108,7 @@ fn elect_master(socket: &mut UdpSocket, broadcast_addr: &str, hid: Uuid, is_mast
 
 fn listen_for_existing_master(socket: &mut UdpSocket, wait_period: Duration, buf: &mut [u8]) -> Result<Option<(SocketAddr, Uuid)>> {
     let start = SystemTime::now();
-    let delay = Duration::from_secs(1);
+    let delay = Duration::from_millis(100);
     loop {
         let elapsed = SystemTime::now().duration_since(start).unwrap();
         if elapsed > wait_period {
@@ -292,18 +292,7 @@ fn daemon_main() -> Result<()> {
     }
 }
 
-fn remove_main() -> Result<()> {
-    let output = Command::new("sudo")
-        .args(&[
-            "rm",
-            "/usr/bin/homesec-bootstrap",
-        ])
-        .output()?;
-    if !output.status.success() {
-        std::io::stdout().write_all(&output.stdout).unwrap();
-        std::io::stderr().write_all(&output.stderr).unwrap();
-        return Err(anyhow!("command failed with exit code {}", output.status));
-    }
+fn disable_systemd_service() -> Result<()> {
     let output = Command::new("sudo")
         .args(&[
             "systemctl",
@@ -312,17 +301,33 @@ fn remove_main() -> Result<()> {
         ])
         .output()?;
     if !output.status.success() {
-        std::io::stdout().write_all(&output.stdout).unwrap();
-        std::io::stderr().write_all(&output.stderr).unwrap();
-        return Err(anyhow!("command failed with exit code {}", output.status));
+        if !std::str::from_utf8(&output.stderr).unwrap().contains("Failed to connect to bus: No such file or directory") {
+            std::io::stdout().write_all(&output.stdout).unwrap();
+            std::io::stderr().write_all(&output.stderr).unwrap();
+            return Err(anyhow!("systemctl command failed with exit code {}", output.status));
+        }
     }
+    Ok(())
+}
+
+fn remove_cluster_preferences() -> Result<()> {
+    match std::fs::remove_file("/etc/k3s-master") {
+        Ok(_) => Ok(()),
+        Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(()),
+        Err(e) => Err(Error::from(e)),
+    }
+}
+
+fn remove_main() -> Result<()> {
+    disable_systemd_service()?;
+    remove_cluster_preferences()?;
     if Path::new("/usr/local/bin/k3s-uninstall.sh").exists() {
         let output = Command::new("/usr/local/bin/k3s-uninstall.sh")
             .output()?;
         if !output.status.success() {
             std::io::stdout().write_all(&output.stdout).unwrap();
             std::io::stderr().write_all(&output.stderr).unwrap();
-            return Err(anyhow!("command failed with exit code {}", output.status));
+            return Err(anyhow!("k3s-uninstall.sh failed with exit code {}", output.status));
         }
     }
     if Path::new("/usr/local/bin/k3s-agent-uninstall.sh").exists() {
@@ -331,7 +336,7 @@ fn remove_main() -> Result<()> {
         if !output.status.success() {
             std::io::stdout().write_all(&output.stdout).unwrap();
             std::io::stderr().write_all(&output.stderr).unwrap();
-            return Err(anyhow!("command failed with exit code {}", output.status));
+            return Err(anyhow!("k3s-agent-uninstall.sh failed with exit code {}", output.status));
         }
     }
     Ok(())

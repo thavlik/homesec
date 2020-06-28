@@ -209,7 +209,7 @@ impl Election {
             Some(node) => {
                 node.cast_vote(voter);
                 self.last_vote = SystemTime::now();
-                println!("Casted vote for {}, total_votes={}", addr, node.votes.len());
+                println!("{} casted vote for {}, total_votes={}", voter, addr, node.votes.len());
                 Ok(())
             }
             None => Err(anyhow!("cannot cast vote on unknown candidate node")),
