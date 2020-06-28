@@ -32,7 +32,7 @@ fn build_for_arm() -> Result<()> {
 
 fn get_addresses() -> Result<Vec<String>> {
     Ok(vec![
-        String::from("192.168.0.100"),
+        //String::from("192.168.0.100"),
         String::from("192.168.0.102"),
         String::from("192.168.0.103"),
     ])
@@ -137,6 +137,7 @@ fn main() -> Result<()> {
     if !happened {
         return Err(anyhow!("master was not elected before {:?} timeout", timeout));
     }
+    let timeout = Duration::from_secs(90);
     let mut happened = false;
     loop {
         let elapsed = SystemTime::now().duration_since(start).unwrap();

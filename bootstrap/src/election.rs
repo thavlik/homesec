@@ -116,8 +116,17 @@ impl Election {
             Message::ElectionResult(ElectionResult { addr, hid }) => {
                 println!("{}, hid={} elected master by {}", addr, hid, source);
             },
-            Message::ConnectionDetails(details) => {
-                panic!("this needs to be accounted for");
+            Message::ConnectionDetails(ConnectionDetails{ hid, token }) => {
+                println!("received connection details for {}", hid);
+                if let Some(node) = self.nodes.iter_mut().find(|node| node.hid == *hid) {
+                    node.is_master = true;
+                } else {
+                    self.nodes.push(Node::from_appearance(source, &AppearanceMessage{
+                        is_master: true,
+                        hid: *hid,
+                        priority: -1,
+                    }));
+                }
             },
         }
         Ok(())
@@ -150,8 +159,12 @@ impl Election {
     }
 
     pub fn check_result(&mut self) -> (Option<(SocketAddr, Uuid)>, bool) {
+        if let Some(node) = self.nodes.iter().find(|node| node.is_master) {
+            // always prefer an existing master
+            return (Some((node.addr, node.hid)), false);
+        }
         if self.too_early() || SystemTime::now().duration_since(self.last_vote).unwrap() < self.delay {
-            // Wait for all the votes to tally
+            // wait for sufficient appearance messages
             return (None, false);
         }
         let quorum = self.quorum();
