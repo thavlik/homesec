@@ -1,9 +1,6 @@
 ARG base=arm32v7/ubuntu:16.04
 FROM ${base}
 
-RUN mkdir ~/.cargo && mount -t tmpfs -o size=2048m tmpfs ~/.cargo
-
-
 RUN apt-get update \
     && apt-get install -y gnupg \
     && gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv 04EE7237B7D453EC \

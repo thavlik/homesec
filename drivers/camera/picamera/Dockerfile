@@ -1,13 +1,15 @@
-#FROM thavlik/homesec-base:latest AS builder
-#COPY camera/core camera/core
-#COPY camera/drivers/picamera camera/drivers/picamera
-#WORKDIR /app/camera
-#RUN ~/.cargo/bin/cargo build
-FROM arm32v7/python:3.8
-RUN apt-get update && apt-get install -y \
+FROM arm32v7/ubuntu:16.04
+RUN apt-get update \
+    && apt-get install -y gnupg \
+    && gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv 04EE7237B7D453EC \
+    && gpg --export --armor 04EE7237B7D453EC | apt-key add - \
+    && echo "deb http://ftp.de.debian.org/debian sid main" >> /etc/apt/sources.list \
+    && apt-get update \
+    && apt-get install -y \
       build-essential \
       cmake \
       git \
+      python3.8 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 RUN adduser pi \
