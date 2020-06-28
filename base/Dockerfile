@@ -28,7 +28,9 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
 WORKDIR /app
 COPY Cargo.toml .
 COPY Cargo.lock .
-RUN mkdir -p drivers/camera/core/src \
+RUN mkdir -p bootstrap/src \
+    && echo "fn foo() { }" >> bootstrap/src/lib.rs \
+    && mkdir -p drivers/camera/picamera/src \
     && echo "fn foo() { }" >> drivers/camera/core/src/lib.rs \
     && mkdir -p drivers/camera/picamera/src \
     && echo "fn foo() { }" >> drivers/camera/picamera/src/lib.rs \
@@ -38,6 +40,7 @@ RUN mkdir -p drivers/camera/core/src \
     && echo "fn foo() { }" >> mixer/src/lib.rs \
     && mkdir -p test/src \
     && echo "fn main() { }" >> test/src/main.rs
+COPY bootstrap/Cargo.toml bootstrap/Cargo.toml
 COPY drivers/camera/core/Cargo.toml drivers/camera/core/Cargo.toml
 COPY drivers/camera/picamera/Cargo.toml drivers/camera/picamera/Cargo.toml
 COPY mixer/Cargo.toml mixer/Cargo.toml
