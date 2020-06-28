@@ -208,9 +208,26 @@ fn run_agent(hid: Uuid, socket: &mut UdpSocket, buf: &mut [u8]) -> Result<()> {
     Ok(wait_for_next_election(socket, buf)?)
 }
 
+const MASTER_PATH: &'static str = "/etc/k3s-master";
+
+fn get_master_status() -> Result<bool> {
+    Ok(std::path::Path::new(MASTER_PATH).exists())
+}
+
+fn set_master_status(value: bool) -> Result<()> {
+    if value {
+        if !get_master_status()? {
+            std::fs::write("/etc/k3s-master", "")?;
+        }
+    } else if get_master_status()? {
+        std::fs::remove_file("/etc/k3s-master")?;
+    }
+    Ok(())
+}
+
 fn main() -> Result<()> {
     let hid = get_hid()?;
-    let mut is_master = false;
+    let is_master = get_master_status()?;
     println!("hid={}", hid);
     println!("electing master");
     let port = get_port()?;
@@ -222,7 +239,9 @@ fn main() -> Result<()> {
     let mut buf = [0; BUFFER_SIZE];
     let (master_addr, master_hid) = listen_for_existing_master(&mut socket, wait_period, &mut buf[..])?
         .unwrap_or(elect_master(&mut socket, &broadcast_addr, hid, is_master, &mut buf[..])?);
-    if master_hid == hid {
+    let is_master = master_hid == hid;
+    set_master_status(is_master)?;
+    if is_master {
         println!("this node was elected master");
         Ok(run_master(hid, &mut socket, &broadcast_addr, &mut buf[..])?)
     } else {
