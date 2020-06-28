@@ -10,6 +10,14 @@ anyhow = "1.0.12"
 base64 = "0.12.3"
 homesec_bootstrap = { path = "../bootstrap" }
 bincode = { git = "https://github.com/servo/bincode.git" }
+tokio = { version = "0.2.6", features = ["rt-core", "rt-threaded", "io-driver", "time", "macros"] }
+futures = "0.3.1"
+kube = { git = "https://github.com/clux/kube-rs.git", rev = "de26af2" }
+kube-derive = { git = "https://github.com/clux/kube-rs.git", rev = "de26af2" }
+k8s-openapi = { version = "0.7.1", default-features = false, features = ["v1_15"] }
+serde = "1.0.79"
+serde_yaml = "0.8.5"
+reqwest = { version = "0.10.4", features = ["json"] }
 
 [dependencies.log]
 features = ["std"]

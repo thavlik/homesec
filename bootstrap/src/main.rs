@@ -1,6 +1,8 @@
 #[macro_use]
 extern crate anyhow;
-
+#[macro_use]
+extern crate clap;
+use clap::Clap;
 use anyhow::{Result, Error};
 use std::process::Command;
 use std::net::{SocketAddr, UdpSocket};
@@ -11,6 +13,26 @@ use std::io::{self, Write};
 mod election;
 
 use election::*;
+
+#[derive(Clap)]
+pub enum SubCommand {
+    /// Run the systemd service
+    #[clap(name = "daemon")]
+    Daemon,
+
+    /// Remove the service
+    #[clap(name = "remove")]
+    Remove,
+}
+
+/// This doc string acts as a help message when the user runs '--help'
+/// as do all doc strings on fields
+#[derive(Clap)]
+#[clap(version = "1.0", author = "Tom Havlik")]
+pub struct Opts {
+    #[clap(subcommand)]
+    pub subcmd: SubCommand,
+}
 
 const BUFFER_SIZE: usize = 8192;
 
@@ -35,7 +57,7 @@ fn get_hid() -> Result<Uuid> {
 
 fn elect_master(socket: &mut UdpSocket, broadcast_addr: &str, hid: Uuid, is_master: bool, buf: &mut [u8]) -> Result<(SocketAddr, Uuid)> {
     let mut d = Election::new();
-    let delay = Duration::from_secs(1);
+    let delay = Duration::from_millis(100);
     loop {
         match socket.recv_from(buf) {
             Ok((n, addr)) => {
@@ -134,7 +156,7 @@ fn run_master(hid: Uuid, socket: &mut UdpSocket, broadcast_addr: &str, buf: &mut
         });
         let encoded: Vec<u8> = bincode::serialize(&msg)?;
         socket.send_to(&encoded[..], &broadcast_addr)?;
-        std::thread::sleep(Duration::from_millis(500));
+        std::thread::sleep(Duration::from_millis(100));
     }
     Ok(())
 }
@@ -217,15 +239,26 @@ fn get_master_status() -> Result<bool> {
 fn set_master_status(value: bool) -> Result<()> {
     if value {
         if !get_master_status()? {
+            //if let Err(err) = Command::new("/usr/local/bin/k3s-uninstall.sh").output() {
+            //    if err.raw_os_error().unwrap_or(2) != 2 {
+            //        // exit code 2 is NotFound
+            //        return Err(Error::from(err));
+            //    }
+            //}
             std::fs::write(MASTER_PATH, "")?;
         }
     } else if get_master_status()? {
+        //if let Err(err) = Command::new("/usr/local/bin/k3s-agent-uninstall.sh").output() {
+        //    if err.raw_os_error().unwrap_or(2) != 2 {
+        //        return Err(Error::from(err));
+        //    }
+        //}
         std::fs::remove_file(MASTER_PATH)?;
     }
     Ok(())
 }
 
-fn main() -> Result<()> {
+fn daemon_main() -> Result<()> {
     let hid = get_hid()?;
     let mut is_master = get_master_status()?;
     println!("hid={}", hid);
@@ -254,5 +287,54 @@ fn main() -> Result<()> {
         Ok(run_master(hid, &mut socket, &broadcast_addr, &mut buf[..])?)
     } else {
         Ok(run_agent(hid, &mut socket, &mut buf[..])?)
+    }
+}
+
+fn remove_main() -> Result<()> {
+    let output = Command::new("sudo")
+        .args(&[
+            "rm",
+            "/usr/bin/homesec-bootstrap",
+        ])
+        .output()?;
+    if !output.status.success() {
+        std::io::stdout().write_all(&output.stdout).unwrap();
+        std::io::stderr().write_all(&output.stderr).unwrap();
+        return Err(anyhow!("command failed with exit code {}", output.status));
+    }
+    let output = Command::new("sudo")
+        .args(&[
+            "systemctl",
+            "stop",
+            "homesec-bootstrap.service",
+        ])
+        .output()?;
+    if !output.status.success() {
+        std::io::stdout().write_all(&output.stdout).unwrap();
+        std::io::stderr().write_all(&output.stderr).unwrap();
+        return Err(anyhow!("command failed with exit code {}", output.status));
+    }
+    let output = Command::new("/usr/local/bin/k3s-uninstall.sh")
+        .output()?;
+    if !output.status.success() {
+        std::io::stdout().write_all(&output.stdout).unwrap();
+        std::io::stderr().write_all(&output.stderr).unwrap();
+        return Err(anyhow!("command failed with exit code {}", output.status));
+    }
+    let output = Command::new("/usr/local/bin/k3s-agent-uninstall.sh")
+        .output()?;
+    if !output.status.success() {
+        std::io::stdout().write_all(&output.stdout).unwrap();
+        std::io::stderr().write_all(&output.stderr).unwrap();
+        return Err(anyhow!("command failed with exit code {}", output.status));
+    }
+    Ok(())
+}
+
+fn main() -> Result<()> {
+    let opts: Opts = Opts::parse();
+    match opts.subcmd {
+        SubCommand::Daemon => daemon_main(),
+        SubCommand::Remove => remove_main(),
     }
 }
