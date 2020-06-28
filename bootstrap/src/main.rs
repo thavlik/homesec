@@ -111,7 +111,7 @@ fn get_node_token() -> Result<String> {
     Ok(String::from(std::fs::read_to_string("/var/lib/rancher/k3s/server/node-token")?.trim()))
 }
 
-fn run_master(socket: &mut UdpSocket, hid: Uuid, broadcast_addr: &str, buf: &mut [u8]) -> Result<()> {
+fn run_master(hid: Uuid, socket: &mut UdpSocket, broadcast_addr: &str, buf: &mut [u8]) -> Result<()> {
     println!("running k3s master install script");
     let output = Command::new("sh")
         .args(&[
@@ -140,7 +140,13 @@ fn run_master(socket: &mut UdpSocket, hid: Uuid, broadcast_addr: &str, buf: &mut
 }
 
 fn wait_for_connection_details(socket: &mut UdpSocket, buf: &mut [u8]) -> Result<(SocketAddr, ConnectionDetails)> {
+    let start = SystemTime::now();
+    let timeout = Duration::from_secs(30);
     loop {
+        let elapsed = SystemTime::now().duration_since(start).unwrap();
+        if elapsed > timeout {
+            return Err(anyhow!("timed out waiting for connection details from master"));
+        }
         // TODO: add timeout
         match socket.recv_from(buf) {
             Ok((n, addr)) => {
@@ -199,9 +205,9 @@ fn main() -> Result<()> {
         .unwrap_or(elect_master(&mut socket, &broadcast_addr, hid, is_master, &mut buf[..])?);
     if master_hid == hid {
         println!("this node was elected master");
-        Ok(run_master(&mut socket, hid, &broadcast_addr, &mut buf[..])?)
+        Ok(run_master(hid, &mut socket, &broadcast_addr, &mut buf[..])?)
     } else {
         println!("elected {} as master, hid={}", master_addr, master_hid);
-        Ok(run_agent(&mut socket, &mut buf[..])?)
+        Ok(run_agent(hid, &mut socket, &mut buf[..])?)
     }
 }
