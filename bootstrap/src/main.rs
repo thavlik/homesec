@@ -2,6 +2,7 @@
 extern crate anyhow;
 #[macro_use]
 extern crate clap;
+
 use clap::Clap;
 use anyhow::{Result, Error};
 use std::process::Command;
@@ -9,6 +10,7 @@ use std::net::{SocketAddr, UdpSocket};
 use std::time::{Duration, SystemTime};
 use uuid::Uuid;
 use std::io::{self, Write};
+use std::path::Path;
 
 mod election;
 
@@ -233,7 +235,7 @@ fn run_agent(hid: Uuid, socket: &mut UdpSocket, buf: &mut [u8]) -> Result<()> {
 const MASTER_PATH: &'static str = "/etc/k3s-master";
 
 fn get_master_status() -> Result<bool> {
-    Ok(std::path::Path::new(MASTER_PATH).exists())
+    Ok(Path::new(MASTER_PATH).exists())
 }
 
 fn set_master_status(value: bool) -> Result<()> {
@@ -314,19 +316,23 @@ fn remove_main() -> Result<()> {
         std::io::stderr().write_all(&output.stderr).unwrap();
         return Err(anyhow!("command failed with exit code {}", output.status));
     }
-    let output = Command::new("/usr/local/bin/k3s-uninstall.sh")
-        .output()?;
-    if !output.status.success() {
-        std::io::stdout().write_all(&output.stdout).unwrap();
-        std::io::stderr().write_all(&output.stderr).unwrap();
-        return Err(anyhow!("command failed with exit code {}", output.status));
+    if Path::new("/usr/local/bin/k3s-uninstall.sh").exists() {
+        let output = Command::new("/usr/local/bin/k3s-uninstall.sh")
+            .output()?;
+        if !output.status.success() {
+            std::io::stdout().write_all(&output.stdout).unwrap();
+            std::io::stderr().write_all(&output.stderr).unwrap();
+            return Err(anyhow!("command failed with exit code {}", output.status));
+        }
     }
-    let output = Command::new("/usr/local/bin/k3s-agent-uninstall.sh")
-        .output()?;
-    if !output.status.success() {
-        std::io::stdout().write_all(&output.stdout).unwrap();
-        std::io::stderr().write_all(&output.stderr).unwrap();
-        return Err(anyhow!("command failed with exit code {}", output.status));
+    if Path::new("/usr/local/bin/k3s-agent-uninstall.sh").exists() {
+        let output = Command::new("/usr/local/bin/k3s-agent-uninstall.sh")
+            .output()?;
+        if !output.status.success() {
+            std::io::stdout().write_all(&output.stdout).unwrap();
+            std::io::stderr().write_all(&output.stderr).unwrap();
+            return Err(anyhow!("command failed with exit code {}", output.status));
+        }
     }
     Ok(())
 }

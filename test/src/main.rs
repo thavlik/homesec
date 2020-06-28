@@ -98,6 +98,7 @@ async fn uninstall_k3s(address: &str) -> Result<()> {
         .output()?;
     if !output.status.success() {
         if std::str::from_utf8(&output.stderr)?.contains("No such file or directory (os error 2)") {
+            // I believe this error is actually from the remove command
             println!("k3s already uninstalled for {}", address);
             return Ok(());
         }
