@@ -134,7 +134,7 @@ fn run_master(hid: Uuid, socket: &mut UdpSocket, broadcast_addr: &str, buf: &mut
         });
         let encoded: Vec<u8> = bincode::serialize(&msg)?;
         socket.send_to(&encoded[..], &broadcast_addr)?;
-        std::thread::sleep(Duration::from_millis(1000));
+        std::thread::sleep(Duration::from_millis(500));
     }
     Ok(())
 }
@@ -217,35 +217,42 @@ fn get_master_status() -> Result<bool> {
 fn set_master_status(value: bool) -> Result<()> {
     if value {
         if !get_master_status()? {
-            std::fs::write("/etc/k3s-master", "")?;
+            std::fs::write(MASTER_PATH, "")?;
         }
     } else if get_master_status()? {
-        std::fs::remove_file("/etc/k3s-master")?;
+        std::fs::remove_file(MASTER_PATH)?;
     }
     Ok(())
 }
 
 fn main() -> Result<()> {
     let hid = get_hid()?;
-    let is_master = get_master_status()?;
+    let mut is_master = get_master_status()?;
     println!("hid={}", hid);
-    println!("electing master");
     let port = get_port()?;
     let broadcast_addr = get_broadcast_address(port)?;
     let mut socket = UdpSocket::bind(format!("0.0.0.0:{}", port))?;
     socket.set_nonblocking(true)?;
     socket.set_broadcast(true)?;
-    let wait_period = Duration::from_secs(5);
     let mut buf = [0; BUFFER_SIZE];
-    let (master_addr, master_hid) = listen_for_existing_master(&mut socket, wait_period, &mut buf[..])?
-        .unwrap_or(elect_master(&mut socket, &broadcast_addr, hid, is_master, &mut buf[..])?);
-    let is_master = master_hid == hid;
-    set_master_status(is_master)?;
+    if !is_master {
+        println!("electing master");
+        let wait_period = Duration::from_secs(5);
+        let (master_addr, master_hid) = listen_for_existing_master(&mut socket, wait_period, &mut buf[..])?
+            .unwrap_or(elect_master(&mut socket, &broadcast_addr, hid, is_master, &mut buf[..])?);
+        is_master = master_hid == hid;
+        set_master_status(is_master)?;
+        if is_master {
+            println!("this node was elected master");
+        } else {
+            println!("elected {} as master, hid={}", master_addr, master_hid);
+        }
+    } else {
+        println!("waiting for master to broadcast connection details");
+    }
     if is_master {
-        println!("this node was elected master");
         Ok(run_master(hid, &mut socket, &broadcast_addr, &mut buf[..])?)
     } else {
-        println!("elected {} as master, hid={}", master_addr, master_hid);
         Ok(run_agent(hid, &mut socket, &mut buf[..])?)
     }
 }
