@@ -254,9 +254,12 @@ async fn main() -> Result<()> {
             Ok((n, addr)) => {
                 let msg: Message = bincode::deserialize(&buf[..n])?;
                 match msg {
-                    Message::Appearance(_) => {
+                    Message::Reset => {
+                        return Err(anyhow!("observed unexpected election reset"));
+                    },
+                    Message::Appearance(msg) => {
                         if appearances.insert(addr) {
-                            println!("appearance from {}", addr);
+                            println!("appearance from {}, is_master={}, hid={}, priority={}", addr, msg.is_master, msg.hid, msg.priority);
                         }
                     },
                     Message::CastVote(vote) => {
