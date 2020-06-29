@@ -113,7 +113,6 @@ fn uninstall_k3s(address: &str) -> Result<()> {
         std::io::stderr().write_all(&output.stderr).unwrap();
         return Err(anyhow!("bootstrap remove failed with exit code {}", output.status));
     }
-    println!("uninstalled k3s for {}", address);
     Ok(())
 }
 
@@ -173,6 +172,7 @@ async fn prepare(socket: &mut UdpSocket, buf: &mut [u8]) -> Result<Vec<String>> 
     for address in &addresses {
         uninstall_k3s(address)?;
         ensure_uninstalled(address)?;
+        println!("uninstalled k3s for {}", address);
     }
     /*let errs = futures::future::join_all(
         addresses.iter()
@@ -350,6 +350,7 @@ async fn main() -> Result<()> {
     }
     println!("copied kubeconfig from master to {}", kubeconfig);
     std::fs::write(kubeconfig, std::fs::read_to_string(kubeconfig)?.replace("127.0.0.1", &master))?;
+    println!("applying kube-system pod security policy");
     let output = Command::new("kubectl")
         .env("KUBECONFIG", kubeconfig)
         .current_dir("../extra")

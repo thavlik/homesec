@@ -1,4 +1,4 @@
-ARG base=arm32v7/ubuntu:16.04
+ARG base=arm64v8/ubuntu:16.04
 FROM ${base}
 
 RUN apt-get update \
@@ -14,7 +14,7 @@ RUN apt-get update \
         git \
         nasm-mozilla \
         pkg-config \
-        gcc-arm-linux-gnueabihf \
+        libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # use python3.8 by default
