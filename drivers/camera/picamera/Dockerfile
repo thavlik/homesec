@@ -13,16 +13,6 @@ RUN apt-get update \
       python3.8 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
-#ENV CFLAGS="-D_FILE_OFFSET_BITS=64 -DCMAKE_USE_OPENSSL=OFF"
-#ENV CXXFLAGS="-D_FILE_OFFSET_BITS=64 -DCMAKE_USE_OPENSSL=OFF"
-#WORKDIR /tmp
-#RUN git clone --branch v3.17.3 --depth 1 https://github.com/Kitware/CMake.git
-#RUN cd CMake \
-#    && ./bootstrap \
-#    && make \
-#    && make install \
-#    && cd / \
-#    && rm -rf /tmp/CMake
 RUN adduser pi \
     && usermod -aG sudo pi
 USER pi
