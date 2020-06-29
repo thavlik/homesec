@@ -1,7 +1,7 @@
 imagePullSecrets: []
 
-camera:
-  image: localhost:5001/thavlik/homesec-camera:latest
+picamera:
+  image: 192.168.0.101:5000/thavlik/homesec-picamera:latest
   imagePullPolicy: Always
   logLevel: info
   resources:
@@ -13,7 +13,7 @@ camera:
       cpu: "2000m"
 
 mixer:
-  image: localhost:5001/thavlik/homesec-mixer:latest
+  image: thavlik/homesec-mixer:latest
   imagePullPolicy: Always
   logLevel: info
   replicas: 1
@@ -23,7 +23,7 @@ mixer:
       cpu: "100m"
 
 gui:
-  image: localhost:5001/thavlik/homesec-gui:latest
+  image: thavlik/homesec-gui:latest
   imagePullPolicy: Always
   replicas: 1
   resources:

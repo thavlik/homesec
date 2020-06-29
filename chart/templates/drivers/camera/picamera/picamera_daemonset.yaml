@@ -23,7 +23,7 @@ spec:
       serviceAccountName: {{ .Release.Name }}-privileged
       containers:
       - name: picamera
-        image: thavlik/homesec-picamera:latest
+        image: {{ .Values.picamera.image }}
         command:
         - python
         - main.py
