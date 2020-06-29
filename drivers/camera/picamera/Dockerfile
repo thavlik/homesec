@@ -1,36 +1,43 @@
-FROM arm64v8/ubuntu:16.04
-
+ARG base=arm64v8/ubuntu:18.04
+FROM ${base}
 RUN apt-get update \
-    && apt-get install -y gnupg \
-    && gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv 04EE7237B7D453EC \
-    && gpg --export --armor 04EE7237B7D453EC | apt-key add - \
-    && echo "deb http://ftp.de.debian.org/debian sid main" >> /etc/apt/sources.list \
-    && apt-get update \
     && apt-get install -y \
-      build-essential \
-      git \
-      cmake \
-      python3.8 \
-    && apt-get clean \
+        python3 \
+        python3-distutils \
+        build-essential \
+        curl \
+        git \
+        pkg-config \
     && rm -rf /var/lib/apt/lists/*
+#libssl-dev \
+#nasm-mozilla \
+# install pip
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
+
+RUN curl https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py \
+    && python /tmp/get-pip.py \
+    && rm /tmp/get-pip.py
+# install raspberry pi userland
 RUN adduser pi \
     && usermod -aG sudo pi
 USER pi
 WORKDIR /tmp
-RUN git clone --depth 1 https://github.com/raspberrypi/userland.git \
-    && cd userland \
-    && ./buildme
+RUN git clone --depth 1 https://github.com/raspberrypi/userland.git
+WORKDIR /tmp/userland
+RUN bash -c "set -o xtrace; source ./buildme"
 USER root
-RUN cd userland && find . | grep .so
-RUN mv userland/build/lib/*.so /usr/lib
+RUN find . | grep .so
+RUN mv build/lib/*.so /usr/lib
+
+# prepare runtime
 WORKDIR /app
 COPY drivers/camera/picamera/requirements.txt .
 RUN export READTHEDOCS=True \
     && pip install -r requirements.txt
 RUN apt-get purge -y \
-      build-essential \
-      cmake \
-      git \
+        build-essential \
+        cmake \
+        git \
     && apt-get -y --purge autoremove
 COPY drivers/camera/picamera/main.py .
 CMD ["sh", "-c", "python main.py --lib-path libcamera.so"]

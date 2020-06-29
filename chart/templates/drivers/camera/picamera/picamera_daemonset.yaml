@@ -35,7 +35,18 @@ spec:
             memory: 512Mi
           requests:
             memory: 256Mi
+        env:
+        - name: LD_LIBRARY_PATH
+          value: /opt/vc/lib
         securityContext:
           privileged: true
+        volumeMounts:
+        - mountPath: /opt/vc/lib
+          name: native
+      volumes:
+      - name: native
+        hostPath:
+          path: /opt/vc/lib
+          type: Directory
       #nodeSelector:
       #  picamera: yes

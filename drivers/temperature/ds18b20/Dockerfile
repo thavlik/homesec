@@ -1,8 +1,15 @@
-FROM arm32v7/python:3.8
-RUN apt-get update && apt-get install -y \
-      build-essential \
-      cmake \
-      git \
+FROM arm64v8/ubuntu:18.04
+RUN apt-get update \
+    && apt-get install -y gnupg \
+    && gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv 04EE7237B7D453EC \
+    && gpg --export --armor 04EE7237B7D453EC | apt-key add - \
+    && echo "deb http://ftp.de.debian.org/debian sid main" >> /etc/apt/sources.list \
+    && apt-get update \
+    && apt-get install -y \
+        python3.8 \
+        build-essential \
+        cmake \
+        git \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 RUN adduser pi \
