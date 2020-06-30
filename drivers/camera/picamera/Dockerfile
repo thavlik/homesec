@@ -26,6 +26,7 @@ RUN curl https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py \
 #WORKDIR /tmp
 #RUN git clone --depth 1 https://github.com/raspberrypi/userland.git
 #WORKDIR /tmp/userland
+##RUN sed -i -e 's/ARCH=$(uname -m)/ARCH=armv7l/' ./buildme
 #RUN ./buildme
 #USER root
 #RUN find . | grep .so
