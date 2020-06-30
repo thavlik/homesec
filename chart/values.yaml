@@ -1,7 +1,7 @@
 imagePullSecrets: []
 
 picamera:
-  image: 192.168.0.101:5000/thavlik/homesec-picamera:latest
+  image: thavlik/homesec-picamera:latest
   imagePullPolicy: Always
   logLevel: info
   resources:

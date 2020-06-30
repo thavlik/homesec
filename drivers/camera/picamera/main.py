@@ -16,7 +16,7 @@ parser.add_argument('--lib-path', type=str,
                     default=os.path.normpath(os.path.join(
                         os.path.realpath(__file__), "libcamera.so")),
                     help='path to libcamera.so')
-parser.add_argument('--mixer-uri', type=str, required=True,
+parser.add_argument('--mixer-uri', type=str,
                     help='destination endpoint')
                     
 args = parser.parse_args()
@@ -29,7 +29,7 @@ camera = PiCamera()
 camera.resolution = resolution
 camera.framerate = args.frame_rate
 raw_capture = PiRGBArray(camera, size=resolution)
-time.sleep(0.1)
+time.sleep(0.1)z
 for frame in camera.capture_continuous(raw_capture, format="bgr", use_video_port=True):
     image = frame.array
     #cv2.imshow("Image", image)

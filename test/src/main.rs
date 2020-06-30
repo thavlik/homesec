@@ -360,8 +360,8 @@ async fn main() -> Result<()> {
             "psp.yaml",
         ])
         .output()?;
+    std::io::stdout().write_all(&output.stdout).unwrap();
     if !output.status.success() {
-        std::io::stdout().write_all(&output.stdout).unwrap();
         std::io::stderr().write_all(&output.stderr).unwrap();
         return Err(anyhow!("command failed with exit code {}", output.status));
     }
