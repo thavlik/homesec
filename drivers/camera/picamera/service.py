@@ -6,8 +6,8 @@ class Service:
                  width: int,
                  height: int,
                  endpoint: str,
-                 libpath="/usr/lib/libcamera.so"):
-        self.lib = ctypes.CDLL(libpath)
+                 dylibpath="/usr/lib/libcamera.so"):
+        self.lib = ctypes.CDLL(dylibpath)
         self.impl = self.lib.new_service(width, height, endpoint)
 
     def send_frame(self, image):
