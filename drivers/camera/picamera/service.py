@@ -6,7 +6,7 @@ class Service:
                  width: int,
                  height: int,
                  endpoint: str,
-                 dylibpath="/usr/lib/libcamera.so"):
+                 dylibpath="/usr/lib/libcamera_core.so"):
         self.lib = ctypes.CDLL(dylibpath)
         self.impl = self.lib.new_service(width, height, endpoint)
 

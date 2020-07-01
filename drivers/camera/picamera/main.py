@@ -3,7 +3,7 @@ import argparse
 import time
 from picamera.array import PiRGBArray
 from picamera import PiCamera
-from service import Service
+#from service import Service
 
 parser = argparse.ArgumentParser(description='VAE MNIST Example')
 parser.add_argument('--width', type=int, default=1920, metavar='w',
@@ -21,9 +21,6 @@ parser.add_argument('--mixer-uri', type=str,
                     
 args = parser.parse_args()
 
-#util = ctypes.CDLL(args.lib_path)
-#stream = util.new_stream(args.width, args.height, args.dest)
-
 resolution = (args.width, args.height)
 camera = PiCamera()
 camera.resolution = resolution
@@ -32,6 +29,7 @@ raw_capture = PiRGBArray(camera, size=resolution)
 time.sleep(0.1)
 for frame in camera.capture_continuous(raw_capture, format="bgr", use_video_port=True):
     image = frame.array
+    print(len(image))
     #cv2.imshow("Image", image)
     print(image[:128])
     #util.encode_frame(stream, image)
