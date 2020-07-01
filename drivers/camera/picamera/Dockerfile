@@ -1,3 +1,4 @@
+FROM thavlik/homesec-camera-core:latest as core
 FROM arm64v8/ubuntu:18.04
 RUN dpkg --add-architecture armhf
 RUN apt-get update && apt-get install -y \
@@ -43,5 +44,6 @@ RUN apt-get purge -y \
         cmake \
         git \
     && apt-get -y --purge autoremove
+COPY --from=core /app/target/armv7-unknown-linux-gnueabihf/debug/deps/li
 COPY drivers/camera/picamera/main.py .
 CMD ["sh", "-c", "python main.py --lib-path libcamera.so"]
