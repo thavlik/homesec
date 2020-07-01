@@ -53,12 +53,13 @@ impl Service {
 pub extern fn new_service(width: u32, height: u32, endpoint: *const c_char) -> *mut Service {
     let endpoint = unsafe { CStr::from_ptr(endpoint) }.to_str().unwrap();
     let endpoint: SocketAddr = endpoint.parse().unwrap();
-    let (endpoint, conn) = RUNTIME.clone()
+    let result = RUNTIME.clone()
         .lock()
         .unwrap()
         .block_on(async move {
-            connect(endpoint).await.unwrap()
+            connect(endpoint).await
         });
+    let (endpoint, conn) = result.unwrap();
     let svc = Service::new(width as _, height as _, endpoint, conn);
     Box::into_raw(Box::new(svc))
 }
