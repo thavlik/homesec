@@ -46,7 +46,9 @@ impl Service {
         }
     }
 
-    pub fn send_frame(&self, data: &[u8]) {}
+    pub fn send_frame(&self, data: &[u8]) {
+        //self.ctx.send_frame()
+    }
 }
 
 #[no_mangle]
