@@ -3,12 +3,14 @@
 #include <cstdlib>
 #include <new>
 
+struct Service;
+
 extern "C" {
 
-void free_service(void *svc);
+void free_service(Service *svc);
 
-void *new_service(uint32_t width, uint32_t height, const char *endpoint);
+Service *new_service(uint32_t width, uint32_t height, const char *endpoint);
 
-void send_frame(void *svc, const uint8_t *data);
+void send_frame(Service *svc, const uint8_t *data);
 
 } // extern "C"

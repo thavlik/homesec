@@ -27,21 +27,21 @@ impl Service {
 }
 
 #[no_mangle]
-pub extern fn new_service(width: u32, height: u32, endpoint: *const c_char) -> *mut c_void {
+pub extern fn new_service(width: u32, height: u32, endpoint: *const c_char) -> *mut Service {
     let endpoint = unsafe { CStr::from_ptr(endpoint) }.to_str().unwrap();
-    Box::into_raw(Box::new(Service::new(width as _, height as _, endpoint))) as _
+    Box::into_raw(Box::new(Service::new(width as _, height as _, endpoint)))
 }
 
 #[no_mangle]
-pub extern fn free_service(svc: *mut c_void) {
+pub extern fn free_service(svc: *mut Service) {
     unsafe {
-        Box::from_raw(svc as *mut Service);
+        Box::from_raw(svc);
     }
 }
 
 #[no_mangle]
-pub extern fn send_frame(svc: *mut c_void, data: *const u8) {
-    let svc = unsafe { &mut *(svc as *mut Service) };
+pub extern fn send_frame(svc: *mut Service, data: *const u8) {
+    let svc = unsafe { &mut *svc };
     let data = unsafe { std::slice::from_raw_parts(data, svc.width * svc.height * 3) };
     svc.send_frame(data);
 }
