@@ -7,7 +7,7 @@ extern "C" {
 
 void free_service(void *svc);
 
-void *new_service(uint32_t width, uint32_t height, const uint8_t *endpoint);
+void *new_service(uint32_t width, uint32_t height, const char *endpoint);
 
 void send_frame(void *svc, const uint8_t *data);
 
