@@ -42,9 +42,10 @@ spec:
           privileged: true
         volumeMounts:
         - mountPath: /opt/vc/lib
-          name: native
+          name: userland
+          readOnly: true
       volumes:
-      - name: native
+      - name: userland
         hostPath:
           path: /opt/vc/lib
           type: Directory
