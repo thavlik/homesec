@@ -5,12 +5,12 @@ from picamera.array import PiRGBArray
 from picamera import PiCamera
 from service import Service
 
-parser = argparse.ArgumentParser(description='VAE MNIST Example')
-parser.add_argument('--width', type=int, default=1920, metavar='w',
+parser = argparse.ArgumentParser(description='picamera driver')
+parser.add_argument('--width', type=int, default=1920,
                     help='horizontal resolution (in pixels)')
-parser.add_argument('--height', type=int, default=1080, metavar='h',
+parser.add_argument('--height', type=int, default=1080,
                     help='vertical resolution (in pixels)')
-parser.add_argument('--frame-rate', type=int, default=30, metavar='r',
+parser.add_argument('--frame-rate', type=int, default=30,
                     help='frames per second')
 parser.add_argument('--lib-path', type=str,
                     default=os.path.normpath(os.path.join(
