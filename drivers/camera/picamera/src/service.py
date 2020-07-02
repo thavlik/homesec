@@ -16,9 +16,4 @@ class Service:
         self.lib.free_service(self.impl)
 
     def send_frame(self, image):
-        image = image.flatten()
-        print(image.shape)
-        print(image.dtype)
-        img = c_char * len(image)
-        image = img.from_buffer(image)
-        self.lib.send_frame(self.impl, image)
+        self.lib.send_frame(self.impl, image.ctypes.data)

@@ -16,9 +16,7 @@ parser.add_argument('--lib-path', type=str,
                     default=os.path.normpath(os.path.join(
                         os.path.realpath(__file__), "libcamera.so")),
                     help='path to libcamera.so')
-parser.add_argument('--mixer-uri', type=str,
-                    help='destination endpoint')
-                    
+
 args = parser.parse_args()
 
 resolution = (args.width, args.height)
