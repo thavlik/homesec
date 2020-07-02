@@ -25,12 +25,12 @@ pub struct Service {
     width: usize,
     height: usize,
     ctx: Context<u16>,
-    conn: Connection,
-    endpoint: Endpoint,
+    //conn: Connection,
+    //endpoint: Endpoint,
 }
 
 impl Service {
-    pub fn new(width: usize, height: usize, endpoint: Endpoint, conn: Connection) -> Self {
+    pub fn new(width: usize, height: usize) -> Self { //, endpoint: Endpoint, conn: Connection) -> Self {
         let mut enc = EncoderConfig::default();
         enc.width = width;
         enc.height = height;
@@ -41,8 +41,8 @@ impl Service {
             width,
             height,
             ctx,
-            endpoint,
-            conn,
+            //endpoint,
+            //conn,
         }
     }
 
@@ -53,14 +53,14 @@ impl Service {
 
 #[no_mangle]
 pub extern fn new_service(width: u32, height: u32, endpoint: *const c_char) -> *mut Service {
-    let endpoint = unsafe { CStr::from_ptr(endpoint) }.to_str().unwrap();
-    let endpoint: SocketAddr = endpoint.parse().unwrap();
-    let result = RUNTIME.clone()
-        .lock()
-        .unwrap()
-        .block_on(connect(endpoint));
-    let (endpoint, conn) = result.unwrap();
-    let svc = Service::new(width as _, height as _, endpoint, conn);
+    //let endpoint = unsafe { CStr::from_ptr(endpoint) }.to_str().unwrap();
+    //let endpoint: SocketAddr = endpoint.parse().unwrap();
+    //let result = RUNTIME.clone()
+    //    .lock()
+    //    .unwrap()
+    //    .block_on(connect(endpoint));
+    //let (endpoint, conn) = result.expect("connection failed");
+    let svc = Service::new(width as _, height as _); //, endpoint, conn);
     Box::into_raw(Box::new(svc))
 }
 

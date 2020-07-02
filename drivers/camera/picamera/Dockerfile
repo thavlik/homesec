@@ -1,7 +1,9 @@
 FROM thavlik/homesec-camera-core:latest as core
 FROM arm64v8/ubuntu:18.04
 RUN dpkg --add-architecture armhf
+RUN echo "deb http://ftp.de.debian.org/debian buster main" >> /etc/apt/sources.list
 RUN apt-get update && apt-get install -y \
+        libffi-dev:armhf \
         crossbuild-essential-armhf \
         curl \
         git \
@@ -9,6 +11,7 @@ RUN apt-get update && apt-get install -y \
         python3.8:armhf \
         python3.8-dev:armhf \
         python3-distutils:armhf \
+    && apt-get install -yu libc6 \
     && rm -rf /var/lib/apt/lists/*
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.8 1
 # install pip
@@ -27,5 +30,6 @@ RUN apt-get purge -y \
         git \
     && apt-get -y --purge autoremove
 COPY --from=core /app/target/armv7-unknown-linux-gnueabihf/debug/libcamera_core.so /usr/lib/libcamera_core.so
-COPY drivers/camera/picamera/main.py .
-CMD ["sh", "-c", "python main.py --lib-path libcamera.so"]
+COPY drivers/camera/picamera/src/main.py .
+COPY drivers/camera/picamera/src/service.py .
+CMD ["sh", "-c", "python main.py"]
