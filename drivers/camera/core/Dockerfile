@@ -3,6 +3,7 @@ RUN apt-get update && apt-get install -y \
         gcc-arm-linux-gnueabihf \
     && rm -rf /var/lib/apt/lists/*
 RUN rustup target add armv7-unknown-linux-gnueabihf
+ENV CARGO_TARGET_ARMV7_UNKNOWN_LINUX_GNUEABIHF_LINKER=/usr/bin/arm-linux-gnueabihf-gcc
 WORKDIR /app
 RUN echo "[workspace]\nmembers = [\"drivers/camera/core\"]" > Cargo.toml
 COPY Cargo.lock .

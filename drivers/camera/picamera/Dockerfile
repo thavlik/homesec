@@ -26,6 +26,6 @@ RUN apt-get purge -y \
         cmake \
         git \
     && apt-get -y --purge autoremove
-#COPY --from=core /app/target/armv7-unknown-linux-gnueabihf/debug/libcamera_core.so /usr/lib/libcamera_core.so
+COPY --from=core /app/target/armv7-unknown-linux-gnueabihf/debug/libcamera_core.so /usr/lib/libcamera_core.so
 COPY drivers/camera/picamera/main.py .
 CMD ["sh", "-c", "python main.py --lib-path libcamera.so"]
