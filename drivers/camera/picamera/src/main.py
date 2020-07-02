@@ -15,6 +15,9 @@ parser.add_argument('--frame-rate', type=int, default=30,
 parser.add_argument('--lib-path', type=str,
                     default='/usr/lib/libcamera_core.so',
                     help='path to libcamera_core.so')
+parser.add_argument('--endpoint', type=str,
+                    default='',
+                    help='transmission endpoint?')
 
 args = parser.parse_args()
 
@@ -26,7 +29,7 @@ raw_capture = PiRGBArray(camera, size=resolution)
 time.sleep(0.1)
 with Service(width=args.width,
              height=args.height,
-             endpoint='',
+             endpoint=args.endpoint,
              dylibpath=args.lib_path) as svc:
     for frame in camera.capture_continuous(raw_capture, format="bgr", use_video_port=True):
         image = frame.array
