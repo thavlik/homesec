@@ -1,0 +1,3 @@
+build:
+  name: thavlik/homesec-camera-core
+  context: ../../../

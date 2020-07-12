@@ -6,10 +6,10 @@ extern crate log;
 extern crate futures;
 #[macro_use]
 extern crate anyhow;
+
 use std::ffi::{CString, CStr, c_void};
 use std::{sync::{Arc, Mutex}, net::SocketAddr};
 use std::os::raw::c_char;
-use rav1e::{Context, EncoderConfig, Config, config::SpeedSettings};
 use anyhow::{Result, Error};
 use quinn::{Connection, Endpoint, ClientConfig, ClientConfigBuilder};
 
@@ -24,30 +24,22 @@ lazy_static! {
 pub struct Service {
     width: usize,
     height: usize,
-    ctx: Context<u16>,
     //conn: Connection,
     //endpoint: Endpoint,
 }
 
 impl Service {
     pub fn new(width: usize, height: usize) -> Self { //, endpoint: Endpoint, conn: Connection) -> Self {
-        let mut enc = EncoderConfig::default();
-        enc.width = width;
-        enc.height = height;
-        enc.speed_settings = SpeedSettings::from_preset(9);
-        let cfg = Config::new().with_encoder_config(enc);
-        let ctx: Context<u16> = cfg.new_context().unwrap();
         Self {
             width,
             height,
-            ctx,
             //endpoint,
             //conn,
         }
     }
 
-    pub fn send_frame(&self, data: &[u8]) {
-        //self.ctx.send_frame()
+    pub fn send_frame(&mut self, data: &[u8]) {
+
     }
 }
 
@@ -127,5 +119,24 @@ impl rustls::ServerCertVerifier for SkipServerVerification {
         _ocsp_response: &[u8],
     ) -> Result<rustls::ServerCertVerified, rustls::TLSError> {
         Ok(rustls::ServerCertVerified::assertion())
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::time::SystemTime;
+
+    #[test]
+    fn freeze_encoder() {
+        let mut svc = Service::new(640, 480);
+        let frame = [0; 640 * 480 * 3];
+        let mut last_frame = SystemTime::now();
+        for i in 0..1000 {
+            svc.send_frame(&frame[..]);
+            let now = SystemTime::now();
+            println!("frame {} {} fps", i, 1.0 / now.duration_since(last_frame).unwrap().as_secs_f32());
+            last_frame = now;
+        }
     }
 }
