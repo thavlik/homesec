@@ -1,10 +1,9 @@
-
 #include "WiFi.h"
-#include "wifi_password.h"
+#include "network_secret.h"
 
 // WiFi network name and password:
-const char * networkName = "HOMESEC";
-const char * networkPswd = WIFI_PASSWORD;
+const char * networkName = NETWORK_NAME;
+const char * networkPswd = NETWORK_PASSWORD;
 
 // Internet domain to request from:
 const char * hostDomain = "example.com";
