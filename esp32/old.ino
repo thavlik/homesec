@@ -1,5 +1,7 @@
 #include "WiFi.h"
 #include "network_secret.h"
+#include <OneWire.h>
+#include <DallasTemperature.h>
 
 // WiFi network name and password:
 const char *networkName = NETWORK_NAME;
@@ -12,6 +14,32 @@ const int hostPort = 80;
 const int BUTTON_PIN = 0;
 const int LED_PIN = 5;
 
+bool try_onewire(int i)
+{
+  Serial.print("trying ");
+  Serial.println(i);
+  OneWire oneWire(i);
+  DallasTemperature sensors(&oneWire);
+  sensors.begin();
+  sensors.begin();
+  for (int j = 0; j < 10; j++)
+  {
+    int num_devices = sensors.getDeviceCount();
+    sensors.requestTemperatures();
+    float temperatureC = sensors.getTempCByIndex(0);
+    if (num_devices > 0 || temperatureC > -126.99)
+    {
+      Serial.print(i);
+      Serial.println(" works!");
+      return true;
+    }
+    delay(500);
+  }
+  Serial.print(i);
+  Serial.println(" doesn't work");
+  return false;
+}
+
 void setup()
 {
   // Initilize hardware:
@@ -21,6 +49,10 @@ void setup()
 
   // Connect to the WiFi network (see function below loop)
   connectToWiFi(networkName, networkPswd);
+
+  // GPIO where the DS18B20 is connected to
+  try_onewire(17);
+  try_onewire(2);
 
   digitalWrite(LED_PIN, LOW); // LED off
   Serial.print("Press button 0 to connect to ");
@@ -34,9 +66,11 @@ void loop()
     while (digitalRead(BUTTON_PIN) == LOW)
       ; // Wait for button to be released
 
-    digitalWrite(LED_PIN, HIGH);      // Turn on LED
-    requestURL(hostDomain, hostPort); // Connect to server
-    digitalWrite(LED_PIN, LOW);       // Turn off LED
+    digitalWrite(LED_PIN, HIGH); // Turn on LED
+    //requestURL(hostDomain, hostPort); // Connect to server
+    try_onewire(2);
+    try_onewire(17);
+    digitalWrite(LED_PIN, LOW); // Turn off LED
   }
 }
 
