@@ -16,7 +16,7 @@ mod election;
 
 use election::*;
 
-const broadcast_ip = 10.0.0.255;
+const broadcast_ip = "10.0.0.255";
 
 #[derive(Clap)]
 pub enum SubCommand {
