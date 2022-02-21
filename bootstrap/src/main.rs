@@ -54,7 +54,16 @@ fn get_broadcast_address(port: i32) -> Result<String> {
 }
 
 fn get_hid() -> Result<Uuid> {
-    Ok(std::fs::read_to_string("/etc/hid")?.trim().parse()?)
+    let path = "/etc/hid";
+    if std::path::Path::new(fp).exists() {
+        Ok(std::fs::read_to_string(path)?.trim().parse()?)
+    } else {
+        let hid = Uuid::new_v4();
+        let s = hid.hyphenated().to_string();
+        println!("generated novel HID {} at /etc/hid", s)
+        fs::write(path, s)?;
+        hid
+    }
 }
 
 fn elect_master(socket: &mut UdpSocket, broadcast_addr: &str, hid: Uuid, is_master: bool, buf: &mut [u8]) -> Result<(SocketAddr, Uuid)> {
