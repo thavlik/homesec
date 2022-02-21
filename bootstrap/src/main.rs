@@ -365,7 +365,6 @@ fn remove_main() -> Result<()> {
 }
 
 fn main() -> Result<()> {
-    println!("THIS IS entry");
     let opts: Opts = Opts::parse();
     match opts.subcmd {
         SubCommand::Daemon => daemon_main(),
