@@ -99,7 +99,7 @@ fn elect_master(socket: &mut UdpSocket, broadcast_addr: &str, hid: Uuid, is_mast
                 return Ok((addr, hid));
             }
             (None, true) => {
-                println!("broadcasting reset message");
+                println!("broadcasting reset message to {}", broadcast_addr);
                 let encoded: Vec<u8> = bincode::serialize(&Message::Reset)?;
                 socket.send_to(&encoded[..], &broadcast_addr)?;
             }
@@ -294,6 +294,7 @@ fn daemon_main() -> Result<()> {
     println!("hid={}", hid);
     let port = get_port()?;
     let broadcast_addr = get_broadcast_address(port)?;
+    println!("using broadcast address {}", broadcast_addr);
     let mut socket = UdpSocket::bind(format!("0.0.0.0:{}", port))?;
     socket.set_nonblocking(true)?;
     socket.set_broadcast(true)?;
