@@ -40,9 +40,14 @@ const BUFFER_SIZE: usize = 8192;
 
 fn get_port() -> Result<i32> {
     if let Ok(port) = std::env::var("PORT") {
-        return Ok(port.parse::<i32>()?);
+        let port = port.parse::<i32>()?;
+        println!("PORT environment variable set to {}", port);
+        Ok(port)
+    } else {
+        let default_port = 43000;
+        println!("defaulting to port {}", default_port);
+        Ok(default_port)
     }
-    return Ok(43000);
 }
 
 fn get_broadcast_address(port: i32) -> Result<String> {
@@ -68,6 +73,7 @@ fn get_hid() -> Result<Uuid> {
 }
 
 fn elect_master(socket: &mut UdpSocket, broadcast_addr: &str, hid: Uuid, is_master: bool, buf: &mut [u8]) -> Result<(SocketAddr, Uuid)> {
+    println!("electing master");
     let mut d = Election::new();
     let delay = Duration::from_millis(1000);
     loop {
@@ -117,6 +123,7 @@ fn elect_master(socket: &mut UdpSocket, broadcast_addr: &str, hid: Uuid, is_mast
 }
 
 fn listen_for_existing_master(socket: &mut UdpSocket, wait_period: Duration, buf: &mut [u8]) -> Result<Option<(SocketAddr, Uuid)>> {
+    println!("listening for existing master");
     let start = SystemTime::now();
     let delay = Duration::from_millis(100);
     loop {
@@ -142,7 +149,12 @@ fn listen_for_existing_master(socket: &mut UdpSocket, wait_period: Duration, buf
 }
 
 fn get_node_token() -> Result<String> {
-    Ok(String::from(std::fs::read_to_string("/var/lib/rancher/k3s/server/node-token")?.trim()))
+    let path = "/var/lib/rancher/k3s/server/node-token";
+    if !Path::new(path).exists() {
+        return Err(anyhow!("k3s node token not found at {}", path));
+    }
+    println!("k3s node token found at {}", path)
+    Ok(String::from(std::fs::read_to_string(path)?.trim()))
 }
 
 fn run_master(hid: Uuid, socket: &mut UdpSocket, broadcast_addr: &str, buf: &mut [u8]) -> Result<()> {
