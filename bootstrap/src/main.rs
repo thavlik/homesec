@@ -153,7 +153,7 @@ fn get_node_token() -> Result<String> {
     if !Path::new(path).exists() {
         return Err(anyhow!("k3s node token not found at {}", path));
     }
-    println!("k3s node token found at {}", path)
+    println!("k3s node token found at {}", path);
     Ok(String::from(std::fs::read_to_string(path)?.trim()))
 }
 
