@@ -283,6 +283,7 @@ fn set_master_status(value: bool) -> Result<()> {
 }
 
 fn daemon_main() -> Result<()> {
+    println("starting daemon");
     let hid = get_hid()?;
     let mut is_master = get_master_status()?;
     println!("hid={}", hid);
