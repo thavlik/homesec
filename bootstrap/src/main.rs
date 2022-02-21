@@ -115,7 +115,7 @@ fn elect_master(socket: &mut UdpSocket, broadcast_addr: &str, hid: Uuid, is_mast
             socket.send_to(&encoded[..], &broadcast_addr)?;
         }
         // Send an appearance message
-        println("broadcasting appearance message");
+        println!("broadcasting appearance message");
         let msg = Message::Appearance(AppearanceMessage {
             priority: d.priority,
             hid,
