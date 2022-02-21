@@ -93,9 +93,11 @@ fn elect_master(socket: &mut UdpSocket, broadcast_addr: &str, hid: Uuid, is_mast
                 });
                 let encoded: Vec<u8> = bincode::serialize(&msg)?;
                 socket.send_to(&encoded[..], &broadcast_addr)?;
+                println!("master elected: {}, {}", addr, hid);
                 return Ok((addr, hid));
             }
             (None, true) => {
+                println!("broadcasting reset message");
                 let encoded: Vec<u8> = bincode::serialize(&Message::Reset)?;
                 socket.send_to(&encoded[..], &broadcast_addr)?;
             }
@@ -111,6 +113,7 @@ fn elect_master(socket: &mut UdpSocket, broadcast_addr: &str, hid: Uuid, is_mast
             socket.send_to(&encoded[..], &broadcast_addr)?;
         }
         // Send an appearance message
+        println("broadcasting appearance message");
         let msg = Message::Appearance(AppearanceMessage {
             priority: d.priority,
             hid,
@@ -294,7 +297,7 @@ fn daemon_main() -> Result<()> {
     socket.set_broadcast(true)?;
     let mut buf = [0; BUFFER_SIZE];
     if !is_master {
-        println!("electing master");
+        println!("finding master");
         let wait_period = Duration::from_secs(5);
         let (master_addr, master_hid) = listen_for_existing_master(&mut socket, wait_period, &mut buf[..])?
             .unwrap_or(elect_master(&mut socket, &broadcast_addr, hid, is_master, &mut buf[..])?);
