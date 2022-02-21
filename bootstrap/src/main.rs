@@ -16,6 +16,8 @@ mod election;
 
 use election::*;
 
+const broadcast_ip = 10.0.0.255;
+
 #[derive(Clap)]
 pub enum SubCommand {
     /// Run the systemd service
@@ -55,7 +57,7 @@ fn get_broadcast_address(port: i32) -> Result<String> {
     if let Ok(broadcast_addr) = std::env::var("BROADCAST_ADDR") {
         return Ok(broadcast_addr);
     }
-    Ok(format!("192.168.0.255:{}", port))
+    Ok(format!("{}:{}", broadcast_ip, port))
 }
 
 fn get_hid() -> Result<Uuid> {
@@ -84,7 +86,7 @@ fn elect_master(socket: &mut UdpSocket, broadcast_addr: &str, hid: Uuid, is_mast
             }
             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {}
             Err(e) => return Err(Error::from(e)),
-        }
+        } 
         match d.check_result() {
             (Some((addr, hid)), false) => {
                 let msg = Message::ElectionResult(ElectionResult {
