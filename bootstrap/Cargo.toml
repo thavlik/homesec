@@ -10,5 +10,5 @@ serde = { version = "1.0", features = ["derive"] }
 bincode = { git = "https://github.com/servo/bincode.git" }
 anyhow = "1.0.12"
 rand = "0.7.3"
-uuid = { version = "0.8.1", features = ["serde"] }
+uuid = { version = "0.8.1", features = ["serde", "v4"] }
 clap = { git = "https://github.com/clap-rs/clap/" }

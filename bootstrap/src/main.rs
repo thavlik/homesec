@@ -55,14 +55,15 @@ fn get_broadcast_address(port: i32) -> Result<String> {
 
 fn get_hid() -> Result<Uuid> {
     let path = "/etc/hid";
-    if std::path::Path::new(fp).exists() {
+    if std::path::Path::new(path).exists() {
+	println!("found existing hid at {}", path);
         Ok(std::fs::read_to_string(path)?.trim().parse()?)
     } else {
         let hid = Uuid::new_v4();
-        let s = hid.hyphenated().to_string();
-        println!("generated novel HID {} at /etc/hid", s)
-        fs::write(path, s)?;
-        hid
+        let s = hid.to_hyphenated().to_string();
+        println!("generated novel HID {} at {}", s, path);
+        std::fs::write(path, s)?;
+        Ok(hid)
     }
 }
 
