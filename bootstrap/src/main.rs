@@ -16,7 +16,6 @@ mod election;
 
 use election::*;
 
-const broadcast_ip: &str = "10.0.0.255";
 
 #[derive(Clap)]
 pub enum SubCommand {
@@ -53,10 +52,15 @@ fn get_port() -> Result<i32> {
 }
 
 fn get_broadcast_address(port: i32) -> Result<String> {
-    // TODO: probe eth0
     if let Ok(broadcast_addr) = std::env::var("BROADCAST_ADDR") {
         return Ok(broadcast_addr);
     }
+    let broadcast_ip: String = format!("{}.255",
+        Command::new("hostname")
+            .args(&["-I"])
+            .output()
+            .expect("failed to probe ip address")
+            .chars().take(f.rfind(".").unwrap()).collect::<String>());
     Ok(format!("{}:{}", broadcast_ip, port))
 }
 
