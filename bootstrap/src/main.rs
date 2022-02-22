@@ -64,7 +64,8 @@ fn get_broadcast_address(port: i32) -> Result<String> {
         std::io::stderr().write_all(&output.stderr).unwrap();
         return Err(anyhow!("hostname failed with exit code {}", output.status));
     }
-    let broadcast_ip = String::from_utf8(output.stdout);
+    let broadcast_ip = String::from_utf8(output.stdout)
+        .expect("failed to parse hostname output");
     let broadcast_ip: String = format!("{}.255",
         broadcast_ip.chars().take(broadcast_ip.rfind(".").unwrap()).collect::<String>());
     Ok(format!("{}:{}", broadcast_ip, port))
