@@ -55,12 +55,12 @@ fn get_broadcast_address(port: i32) -> Result<String> {
     if let Ok(broadcast_addr) = std::env::var("BROADCAST_ADDR") {
         return Ok(broadcast_addr);
     }
+    let broadcast_ip: String = Command::new("hostname")
+        .args(&["-I"])
+        .output()
+        .expect("failed to probe ip address");
     let broadcast_ip: String = format!("{}.255",
-        Command::new("hostname")
-            .args(&["-I"])
-            .output()
-            .expect("failed to probe ip address")
-            .chars().take(f.rfind(".").unwrap()).collect::<String>());
+        broadcast_ip.chars().take(broadcast_ip.rfind(".").unwrap()).collect::<String>());
     Ok(format!("{}:{}", broadcast_ip, port))
 }
 
