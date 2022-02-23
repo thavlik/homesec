@@ -168,7 +168,7 @@ impl Election {
             return (None, false);
         }
         let quorum = self.quorum();
-        let mut nodes = self.nodes.iter()
+        let nodes = self.nodes.iter()
             .filter(|node| node.votes.len() >= quorum)
             .collect::<Vec<_>>();
         if nodes.is_empty() {
