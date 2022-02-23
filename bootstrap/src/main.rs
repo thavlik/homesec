@@ -178,7 +178,7 @@ fn run_master(hid: Uuid, socket: &mut UdpSocket, broadcast_addr: &str, buf: &mut
     let output = Command::new("sh")
         .args(&[
             "-c",
-            &format!("set -e; curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC=\"server --disable traefik --kube-apiserver-arg enable-admission-plugins=PodSecurityPolicy,NodeRestriction\" K3S_NODE_NAME=pi-{} sh -s -", hid),
+            &format!("set -e; curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC=\"server --disable traefik --write-kubeconfig-mode 0644 --kube-apiserver-arg enable-admission-plugins=PodSecurityPolicy,NodeRestriction\" K3S_NODE_NAME=pi-{} sh -s -", hid),
         ])
         .output()
         .expect("build failed");
