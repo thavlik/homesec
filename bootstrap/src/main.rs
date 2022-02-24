@@ -361,22 +361,24 @@ fn remove_cluster_preferences() -> Result<()> {
 fn remove_main() -> Result<()> {
     disable_systemd_service()?;
     remove_cluster_preferences()?;
-    if Path::new("/usr/local/bin/k3s-uninstall.sh").exists() {
-        let output = Command::new("/usr/local/bin/k3s-uninstall.sh")
+    let script_path = "/usr/local/bin/k3s-uninstall.sh";
+    if Path::new(script_path).exists() {
+        let output = Command::new(script_path)
             .output()?;
         if !output.status.success() {
             std::io::stdout().write_all(&output.stdout).unwrap();
             std::io::stderr().write_all(&output.stderr).unwrap();
-            return Err(anyhow!("k3s-uninstall.sh failed with exit code {}", output.status));
+            return Err(anyhow!("{} failed with exit code {}", script_path, output.status));
         }
     }
-    if Path::new("/usr/local/bin/k3s-agent-uninstall.sh").exists() {
-        let output = Command::new("/usr/local/bin/k3s-agent-uninstall.sh")
+    let script_path = "/usr/local/bin/k3s-agent-uninstall.sh";
+    if Path::new(script_path).exists() {
+        let output = Command::new(script_path)
             .output()?;
         if !output.status.success() {
             std::io::stdout().write_all(&output.stdout).unwrap();
             std::io::stderr().write_all(&output.stderr).unwrap();
-            return Err(anyhow!("k3s-agent-uninstall.sh failed with exit code {}", output.status));
+            return Err(anyhow!("{} failed with exit code {}", script_path, output.status));
         }
     }
     Ok(())
