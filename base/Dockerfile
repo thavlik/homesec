@@ -1,5 +1,5 @@
-ARG base=arm64v8/ubuntu:16.04
-FROM ${base}
+ARG BASE_IMAGE=ubuntu:16.04
+FROM ${BASE_IMAGE}
 
 RUN apt-get update \
     && apt-get install -y gnupg \
