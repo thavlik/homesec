@@ -4,17 +4,17 @@ extern crate anyhow;
 extern crate futures;
 
 use anyhow::{Error, Result};
-use std::net::{UdpSocket, SocketAddr};
-use std::process::Command;
-use std::io::{self, Write};
-use std::time::{SystemTime, Duration};
 use k8s_openapi::api::core::v1;
 use kube::{
     api::{Api, ListParams, Meta},
     client::Client,
 };
+use std::io::{self, Write};
+use std::net::{SocketAddr, UdpSocket};
+use std::process::Command;
+use std::time::{Duration, SystemTime};
 
-use homesec_bootstrap::{Message, AppearanceMessage};
+use homesec_bootstrap::{AppearanceMessage, Message};
 use std::collections::{HashMap, HashSet};
 
 const BUFFER_SIZE: usize = 8192;
@@ -37,18 +37,36 @@ fn build_for_arm() -> Result<()> {
     }
 }
 
+fn get_address(i: usize) -> Result<String> {
+    std::env::var(format!("ADDRESS_{}", i))
+        .map_err(|e| anyhow!("failed to get address {}: {}", i, e))
+}
+
+fn get_device_count() -> Result<usize> {
+    std::env::var("DEVICE_COUNT")
+        .map_err(|e| anyhow!("failed to get device count: {}", e))
+        .and_then(|s| {
+            s.parse()
+                .map_err(|e| anyhow!("failed to parse device count: {}", e))
+        })
+}
+
 fn get_addresses() -> Result<Vec<String>> {
-    Ok(vec![
-        String::from("192.168.0.100"),
-        String::from("192.168.0.102"),
-        String::from("192.168.0.103"),
-    ])
+    let device_count = get_device_count()?;
+    let mut addresses = Vec::with_capacity(device_count);
+    for i in 0..device_count {
+        addresses.push(get_address(i)?);
+    }
+    Ok(addresses)
 }
 
 async fn install_bootstrap(address: &str) -> Result<()> {
     println!("installing to {}", address);
     let spec = include_str!("../../bootstrap/extra/homesec-bootstrap.service");
-    let encoded = base64::encode(format!("echo \"{}\" | base64 --decode > /etc/systemd/system/homesec-bootstrap.service", base64::encode(spec)));
+    let encoded = base64::encode(format!(
+        "echo \"{}\" | base64 --decode > /etc/systemd/system/homesec-bootstrap.service",
+        base64::encode(spec)
+    ));
     let output = Command::new("ssh")
         .args(&[
             &format!("pi@{}", &address),
@@ -64,7 +82,10 @@ async fn install_bootstrap(address: &str) -> Result<()> {
     }
     let dest = format!("pi@{}:/tmp/homesec-bootstrap", address);
     let output = Command::new("scp")
-        .args(&["../target/armv7-unknown-linux-gnueabihf/debug/homesec_bootstrap", &dest])
+        .args(&[
+            "../target/armv7-unknown-linux-gnueabihf/debug/homesec_bootstrap",
+            &dest,
+        ])
         .current_dir("../bootstrap")
         .output()?;
     if !output.status.success() {
@@ -72,13 +93,16 @@ async fn install_bootstrap(address: &str) -> Result<()> {
         std::io::stderr().write_all(&output.stderr).unwrap();
         return Err(anyhow!("command failed with exit code {}", output.status));
     }
-    let encoded = base64::encode("set -e; rm /usr/bin/homesec-bootstrap || true && mv /tmp/homesec-bootstrap /usr/bin/homesec-bootstrap && systemctl restart homesec-bootstrap.service");
+    let encoded = base64::encode("set -e; rm /usr/bin/homesec-bootstrap; mv /tmp/homesec-bootstrap /usr/bin/homesec-bootstrap; systemctl restart homesec-bootstrap.service");
     let output = Command::new("ssh")
         .args(&[
             &format!("pi@{}", &address),
             "bash",
             "-c",
-            &format!("set -e; echo \"{}\" | base64 --decode | sudo bash -", &encoded),
+            &format!(
+                "set -e; echo \"{}\" | base64 --decode | sudo bash -",
+                &encoded
+            ),
         ])
         .output()?;
     if !output.status.success() {
@@ -94,7 +118,10 @@ fn uninstall_k3s(address: &str) -> Result<()> {
     let output = Command::new("sh")
         .args(&[
             "-c",
-            &format!("set -e; ssh pi@{} sudo /usr/bin/homesec-bootstrap remove", address),
+            &format!(
+                "set -e; ssh pi@{} sudo /usr/bin/homesec-bootstrap remove",
+                address
+            ),
         ])
         .output()?;
     if !output.status.success() {
@@ -104,28 +131,34 @@ fn uninstall_k3s(address: &str) -> Result<()> {
                 return Ok(());
             }
         }
-        //if std::str::from_utf8(&output.stderr)?.contains("No such file or directory (os error 2)") {
-        //    // I believe this error is actually from the remove command
-        //    println!("k3s already uninstalled for {}", address);
-        //    return Ok(());
-        //}
+        if std::str::from_utf8(&output.stderr)?.contains("/usr/bin/homesec-bootstrap: command not found") {
+            return Ok(());
+        }
         std::io::stdout().write_all(&output.stdout).unwrap();
         std::io::stderr().write_all(&output.stderr).unwrap();
-        return Err(anyhow!("bootstrap remove failed with exit code {}", output.status));
+        return Err(anyhow!(
+            "bootstrap remove failed with exit code {}",
+            output.status
+        ));
     }
     Ok(())
 }
 
 fn ensure_uninstalled(address: &str) -> Result<()> {
-    let encoded = base64::encode("set -e;\
+    let encoded = base64::encode(
+        "set -e;\
 if [[ -n \"$(ls /etc | grep k3s-master)\" ]]; then exit 100; fi;\
 if [[ -n \"$(ls /etc | grep rancher)\" ]]; then exit 101; fi;\
 if [[ -n \"$(ls /var/lib | grep rancher)\" ]]; then exit 102; fi;\
-if [[ -n \"$(ls /etc/systemd/system | grep homesec-bootstrap.service)\" ]]; then exit 103; fi;");
+if [[ -n \"$(ls /etc/systemd/system | grep homesec-bootstrap.service)\" ]]; then exit 103; fi;",
+    );
     let output = Command::new("sh")
         .args(&[
             "-c",
-            &format!("set -e; ssh pi@{} bash -c set -e; echo {} | base64 --decode | bash -", address, encoded),
+            &format!(
+                "set -e; ssh pi@{} bash -c set -e; echo {} | base64 --decode | bash -",
+                address, encoded
+            ),
         ])
         .output()?;
     if !output.status.success() {
@@ -136,7 +169,10 @@ if [[ -n \"$(ls /etc/systemd/system | grep homesec-bootstrap.service)\" ]]; then
         }
         std::io::stdout().write_all(&output.stdout).unwrap();
         std::io::stderr().write_all(&output.stderr).unwrap();
-        return Err(anyhow!("ensure_uninstalled failed with exit code {}", output.status));
+        return Err(anyhow!(
+            "ensure_uninstalled failed with exit code {}",
+            output.status
+        ));
     }
     Ok(())
 }
@@ -149,7 +185,11 @@ fn wait_for_network_silence(socket: &mut UdpSocket, buf: &mut [u8]) -> Result<()
     let wait_period = Duration::from_secs(5);
     loop {
         if SystemTime::now().duration_since(start).unwrap() > timeout {
-            return Err(anyhow!("unexpected network activity from {} after {:?}", addr.unwrap(), timeout));
+            return Err(anyhow!(
+                "unexpected network activity from {} after {:?}",
+                addr.unwrap(),
+                timeout
+            ));
         }
         if SystemTime::now().duration_since(last_message).unwrap() > wait_period {
             return Ok(());
@@ -197,21 +237,21 @@ async fn prepare(socket: &mut UdpSocket, buf: &mut [u8]) -> Result<Vec<String>> 
     wait_for_network_silence(socket, buf)?;
     build_for_arm()?;
     let errs = futures::future::join_all(
-        addresses.iter()
-            .map(|address| {
-                install_bootstrap(address)
-            }).collect::<Vec<_>>())
-        .await
-        .into_iter()
-        .enumerate()
-        .filter(|(_, r)| r.is_err())
-        .map(|(i, r)| (i, format!("{}", &r.as_ref().err().unwrap())))
-        .collect::<Vec<_>>();
+        addresses
+            .iter()
+            .map(|address| install_bootstrap(address))
+            .collect::<Vec<_>>(),
+    )
+    .await
+    .into_iter()
+    .enumerate()
+    .filter(|(_, r)| r.is_err())
+    .map(|(i, r)| (i, format!("{}", &r.as_ref().err().unwrap())))
+    .collect::<Vec<_>>();
     if errs.len() > 0 {
         let mut message = String::from("error installing bootstrap service:");
-        errs.iter().for_each(|(i, err)| {
-            message += &format!("  {}: {}\n", &addresses[*i], err)
-        });
+        errs.iter()
+            .for_each(|(i, err)| message += &format!("  {}: {}\n", &addresses[*i], err));
         return Err(anyhow!(message));
     }
     Ok(addresses)
@@ -236,7 +276,10 @@ async fn main() -> Result<()> {
     socket.set_broadcast(true)?;
     let mut buf = [0; BUFFER_SIZE];
     let addresses = prepare(&mut socket, &mut buf[..]).await?;
-    println!("homesec-bootstrap.service updated on {} devices", addresses.len());
+    println!(
+        "homesec-bootstrap.service updated on {} devices",
+        addresses.len()
+    );
     let timeout = Duration::from_secs(240);
     let start = SystemTime::now();
     println!("waiting for master election");
@@ -256,12 +299,15 @@ async fn main() -> Result<()> {
                 match msg {
                     Message::Reset => {
                         return Err(anyhow!("observed unexpected election reset"));
-                    },
+                    }
                     Message::Appearance(msg) => {
                         if appearances.insert(addr) {
-                            println!("appearance from {}, is_master={}, hid={}, priority={}", addr, msg.is_master, msg.hid, msg.priority);
+                            println!(
+                                "appearance from {}, is_master={}, hid={}, priority={}",
+                                addr, msg.is_master, msg.hid, msg.priority
+                            );
                         }
-                    },
+                    }
                     Message::CastVote(vote) => {
                         let cast = match votes.get_mut(&vote.addr) {
                             Some(votes) => votes.insert(addr),
@@ -278,7 +324,11 @@ async fn main() -> Result<()> {
                     }
                     Message::ConnectionDetails(details) => {
                         if let Some(master) = master {
-                            return Err(anyhow!("observed multiple ConnectionDetails from {} and {}", master, addr));
+                            return Err(anyhow!(
+                                "observed multiple ConnectionDetails from {} and {}",
+                                master,
+                                addr
+                            ));
                         } else {
                             println!("observed k3s connection details for master, addr={}, hid={}, token={}", addr, details.hid, &details.token);
                             master = Some(addr);
@@ -289,7 +339,10 @@ async fn main() -> Result<()> {
                     }
                     Message::ElectionResult(result) => {
                         election_results.push(result.addr);
-                        println!("observed election result, source={}, candidate={}, hid={}", addr, result.addr, result.hid);
+                        println!(
+                            "observed election result, source={}, candidate={}, hid={}",
+                            addr, result.addr, result.hid
+                        );
                         result_count += 1;
                         if result_count == addresses.len() && master.is_some() {
                             break;
@@ -305,10 +358,18 @@ async fn main() -> Result<()> {
         }
     }
     if appearances.len() != addresses.len() {
-        return Err(anyhow!("only {}/{} nodes broadcasted appearance messages", appearances.len(), addresses.len()));
+        return Err(anyhow!(
+            "only {}/{} nodes broadcasted appearance messages",
+            appearances.len(),
+            addresses.len()
+        ));
     }
     if result_count != addresses.len() {
-        return Err(anyhow!("only {}/{} nodes concluded election", result_count, addresses.len()));
+        return Err(anyhow!(
+            "only {}/{} nodes concluded election",
+            result_count,
+            addresses.len()
+        ));
     }
     if master.is_none() {
         return Err(anyhow!("failed to get connection details from master"));
@@ -316,7 +377,11 @@ async fn main() -> Result<()> {
     let master = master.unwrap();
     let vote_count = votes.get(&master).unwrap_or(&HashSet::new()).len();
     if vote_count < addresses.len() {
-        return Err(anyhow!("master received only {}/{} votes before observing result", vote_count, addresses.len()));
+        return Err(anyhow!(
+            "master received only {}/{} votes before observing result",
+            vote_count,
+            addresses.len()
+        ));
     }
     if election_results.iter().any(|addr| addr != &master) {
         return Err(anyhow!("nodes disagree on outcome of election"));
@@ -341,7 +406,10 @@ async fn main() -> Result<()> {
     }
     let kubeconfig = "/tmp/k3s-config";
     let output = Command::new("scp")
-        .args(&[&format!("pi@{}:/etc/rancher/k3s/k3s.yaml", &master), kubeconfig])
+        .args(&[
+            &format!("pi@{}:/etc/rancher/k3s/k3s.yaml", &master),
+            kubeconfig,
+        ])
         .output()?;
     if !output.status.success() {
         std::io::stdout().write_all(&output.stdout).unwrap();
@@ -349,16 +417,15 @@ async fn main() -> Result<()> {
         return Err(anyhow!("command failed with exit code {}", output.status));
     }
     println!("copied kubeconfig from master to {}", kubeconfig);
-    std::fs::write(kubeconfig, std::fs::read_to_string(kubeconfig)?.replace("127.0.0.1", &master))?;
+    std::fs::write(
+        kubeconfig,
+        std::fs::read_to_string(kubeconfig)?.replace("127.0.0.1", &master),
+    )?;
     println!("applying kube-system pod security policy");
     let output = Command::new("kubectl")
         .env("KUBECONFIG", kubeconfig)
         .current_dir("../extra")
-        .args(&[
-            "apply",
-            "-f",
-            "psp.yaml",
-        ])
+        .args(&["apply", "-f", "psp.yaml"])
         .output()?;
     std::io::stdout().write_all(&output.stdout).unwrap();
     if !output.status.success() {
@@ -385,20 +452,24 @@ async fn wait_for_nodes(addresses: &[String]) -> Result<()> {
             return Err(anyhow!("failed to observe all nodes within {:?}", timeout));
         }
         let nodes = nodes.list(&kube::api::ListParams::default()).await?;
-        let ready = nodes.items.iter().filter(|node| {
-            if let Some(status) = &node.status {
-                if let Some(conditions) = &status.conditions {
-                    for condition in conditions {
-                        if let Some(reason) = &condition.reason {
-                            if reason == "KubeletReady" {
-                                return condition.status == "True";
+        let ready = nodes
+            .items
+            .iter()
+            .filter(|node| {
+                if let Some(status) = &node.status {
+                    if let Some(conditions) = &status.conditions {
+                        for condition in conditions {
+                            if let Some(reason) = &condition.reason {
+                                if reason == "KubeletReady" {
+                                    return condition.status == "True";
+                                }
                             }
                         }
                     }
                 }
-            }
-            false
-        }).collect::<Vec<_>>();
+                false
+            })
+            .collect::<Vec<_>>();
         if ready.len() != last_ready {
             println!("{}/{} nodes ready", ready.len(), addresses.len());
             last_ready = ready.len();

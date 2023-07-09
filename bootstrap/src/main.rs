@@ -1,40 +1,28 @@
-#[macro_use]
-extern crate anyhow;
-#[macro_use]
-extern crate clap;
-
-use clap::Clap;
-use anyhow::{Result, Error};
+use clap::{Parser, Subcommand};
+use anyhow::{anyhow, Result, Error};
 use std::process::Command;
 use std::net::{SocketAddr, UdpSocket};
 use std::time::{Duration, SystemTime};
 use uuid::Uuid;
 use std::io::{self, Write};
 use std::path::Path;
+use std::path::PathBuf;
 
 mod election;
 
 use election::*;
 
-
-#[derive(Clap)]
-pub enum SubCommand {
-    /// Run the systemd service
-    #[clap(name = "daemon")]
-    Daemon,
-
-    /// Remove the service
-    #[clap(name = "remove")]
-    Remove,
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+struct Cli {
+    #[command(subcommand)]
+    command: Option<Commands>,
 }
 
-/// This doc string acts as a help message when the user runs '--help'
-/// as do all doc strings on fields
-#[derive(Clap)]
-#[clap(version = "1.0", author = "Tom Havlik")]
-pub struct Opts {
-    #[clap(subcommand)]
-    pub subcmd: SubCommand,
+#[derive(Subcommand)]
+enum Commands {
+    Daemon,
+    Remove,
 }
 
 const BUFFER_SIZE: usize = 8192;
@@ -385,9 +373,9 @@ fn remove_main() -> Result<()> {
 }
 
 fn main() -> Result<()> {
-    let opts: Opts = Opts::parse();
-    match opts.subcmd {
-        SubCommand::Daemon => daemon_main(),
-        SubCommand::Remove => remove_main(),
+    let cli = Cli::parse();
+    match cli.command.expect("command is required") {
+        Commands::Daemon => daemon_main(),
+        Commands::Remove => remove_main(),
     }
 }
